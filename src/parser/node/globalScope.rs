@@ -1,6 +1,5 @@
 use super::Function;
-use crate::lexer::token::Token;
-use std::{iter::Peekable, slice::Iter, fmt::Display};
+use std::fmt::Display;
 
 pub struct GlobalScope
 {

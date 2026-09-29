@@ -26,7 +26,7 @@ impl Display for Function
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result 
     {
-        writeln!(f, "function\n{{")?;
+        writeln!(f, "Function({} {})\n{{", self.funcType, self.name)?;
 
         for node in &self.body
         {
