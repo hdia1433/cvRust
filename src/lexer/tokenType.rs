@@ -1,4 +1,4 @@
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum TokenType
 {
     KwVoid,
@@ -11,4 +11,12 @@ pub enum TokenType
     PuncSemi,
     Identifier(String),
     Integer(isize)
+}
+
+impl TokenType
+{
+    pub fn isType(&self) -> bool
+    {
+        *self == Self::KwVoid || *self == Self::KwInt
+    }
 }

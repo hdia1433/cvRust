@@ -1,7 +1,7 @@
 use super::tokenType::TokenType;
 use location::Location;
 
-mod location;
+pub mod location;
 
 #[derive(Debug)]
 pub struct Token
@@ -12,8 +12,18 @@ pub struct Token
 
 impl Token
 {
-    pub fn new(kind: TokenType, line: usize, column: usize) -> Self
+    pub fn new(kind: TokenType, loc: Location) -> Self
     {
-        Self {kind, loc: Location::new(line + 1, column + 1)}
+        Self {kind, loc}
+    }
+
+    pub fn getKind(&self) -> &TokenType
+    {
+        &self.kind
+    }
+
+    pub fn getLoc(&self) -> &Location
+    {
+        &self.loc
     }
 }

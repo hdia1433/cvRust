@@ -1,7 +1,7 @@
-mod tokenType;
-mod token;
+pub mod tokenType;
+pub mod token;
 
-use token::Token;
+use token::{Token, location::Location};
 use std::{iter::Peekable, str::Chars};
 use crate::lexer::tokenType::TokenType;
 
@@ -26,6 +26,7 @@ impl Lexer<'_>
     pub fn tokenise(&mut self)
     {
         let mut buffer: String = String::new();
+        let beginLoc = Location::new(self.line, self.column);
 
         while let Some(mut ch) = self.next()
         {
@@ -44,7 +45,7 @@ impl Lexer<'_>
                     "void" => TokenType::KwVoid,
                     "int" => TokenType::KwInt,
                     _ => TokenType::Identifier(buffer.clone())
-                }, self.line, self.column));
+                }, beginLoc.clone()));
             }
             else if ch.is_numeric()
             {
@@ -58,7 +59,7 @@ impl Lexer<'_>
 
                 let integer: isize = buffer.parse().expect("Failed to convert buffer to isize");
 
-                self.tokens.push(Token::new(TokenType::Integer(integer), self.line, self.column));
+                self.tokens.push(Token::new(TokenType::Integer(integer), beginLoc.clone()));
             }
             else 
             {
@@ -78,7 +79,7 @@ impl Lexer<'_>
                         continue;
                     },
                     _ => panic!("Unrecognised token at the line {} and the column {}", self.line, self.column)
-                }, self.line, self.column));
+                }, beginLoc.clone()));
             }
         }
 
