@@ -1,5 +1,5 @@
 use super::lexer::{token::Token, tokenType::TokenType};
-use node::{GlobalScope, Node, Function};
+use node::{GlobalScope, Node, Function, VariableDeclaration, BinaryOperation, binaryOperation::Op, Literal, literal::LiteralType};
 use std::{iter::Peekable, slice::Iter};
 
 mod node;
@@ -70,31 +70,55 @@ impl<'a> Parser<'a>
                 panic!("An error has occurred at {}. A function must contain a '{{' after it's header.", tok.getLoc());
             }
 
-            let mut function = Function::new(funcType, funcName);
-
-            while let Some(next) = self.iter.peek() && *next.getKind() != TokenType::PuncCloseBrace
-            {
-
-                function.addStatement(self.parseExpression());
-            }
-
-            let Some(tok) = self.iter.next() else
-            {
-                panic!("An error has occurred at the end of the file. A function declaration must end in a '}}'.");
-            };
-
-            if *tok.getKind() != TokenType::PuncCloseBrace
-            {
-                panic!("An error has occurred at {}. A function declaration must end in a '}}'.", tok.getLoc());
-            }
+            let function = self.parseFunction(funcType, funcName);
 
             self.ast.addFunction(function);
         }
     }
 
-    pub fn getAst(&self) -> &GlobalScope
+    pub fn _getAst(&self) -> &GlobalScope
     {
         &self.ast
+    }
+
+    fn parseFunction(&mut self, funcType: TokenType, funcName: &str) -> Function
+    {
+        let mut function = Function::new(funcType, funcName);
+
+        while let Some(next) = self.iter.peek() && *next.getKind() != TokenType::PuncCloseBrace
+        {
+
+            function.addStatement(self.parseStatement());
+        }
+
+        let Some(tok) = self.iter.next() else
+        {
+            panic!("An error has occurred at the end of the file. A function declaration must end in a '}}'.");
+        };
+
+        if *tok.getKind() != TokenType::PuncCloseBrace
+        {
+            panic!("An error has occurred at {}. A function declaration must end in a '}}'.", tok.getLoc());
+        }
+
+        function
+    }
+
+    fn parseStatement(&mut self) -> Node
+    {
+        let statement = self.parseExpression();
+
+        let Some(tok) = self.iter.next() else
+        {
+            panic!("An error has occurred at the end of the file. A semi-colon is needed to end a statement.");
+        };
+
+        if *tok.getKind() != TokenType::PuncSemi
+        {
+            panic!("An error has occurred at {}. A semi-colon is needed to end a statement.", tok.getLoc());
+        }
+
+        statement
     }
 
     fn parseExpression(&mut self) -> Node
@@ -104,6 +128,56 @@ impl<'a> Parser<'a>
 
     fn parseVarAssign(&mut self) -> Node
     {
-        todo!()
+        let mut lhs = self.parsePrimary();
+
+        if let Some(next) = self.iter.peek() && *next.getKind() == TokenType::OpAssign
+        {
+            self.iter.next().expect("Failed to get '=' token.");
+
+            let rhs = self.parsePrimary();
+
+            lhs = Node::BinaryOperation(BinaryOperation::new(lhs, Op::Assign, rhs))
+        }
+
+        lhs
+    }
+
+    fn parsePrimary(&mut self) -> Node
+    {
+        let Some(tok) = self.iter.next() else 
+        {
+            panic!("An error has occurred at the end of the file. A primary was expected.");
+        };
+
+        if tok.getKind().isType()
+        {
+            let varType = tok.getKind().clone();
+
+            let Some(tok) = self.iter.next() else
+            {
+                panic!("An error has occurred at the end of the file. A variable name was expected.");
+            };
+
+            let TokenType::Identifier(varName) = tok.getKind() else
+            {
+                panic!("An error has occurred at {}. A variable name was expected.", tok.getLoc());
+            };
+
+            return Node::VariableDeclaration(self.parseVariableDeclaration(varType, varName));
+        }
+
+        match tok.getKind()
+        {
+            TokenType::Integer(integer) => 
+            {
+                Node::Literal(Literal::new(LiteralType::Integer(*integer)))
+            },
+            _ => panic!("Invalid primary")
+        }
+    }
+
+    fn parseVariableDeclaration(&self, varType: TokenType, varName: &str) -> VariableDeclaration
+    {
+        VariableDeclaration::new(varType, varName)
     }
 }
