@@ -1,0 +1,23 @@
+GlobalScope
+{
+function
+{
+Binary Operation
+{
+Left Node: VariableDeclaration
+{
+Type: int
+Name: a
+}
+
+
+Op: =
+Right Node: Literal: Integer: 6
+
+
+}
+
+
+}
+
+}

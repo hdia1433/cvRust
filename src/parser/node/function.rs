@@ -1,5 +1,6 @@
 use crate::lexer::tokenType::TokenType;
 use super::Node;
+use std::fmt::Display;
 
 pub struct Function
 {
@@ -18,5 +19,22 @@ impl Function
     pub fn addStatement(&mut self, node: Node)
     {
         self.body.push(node);
+    }
+}
+
+impl Display for Function
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result 
+    {
+        writeln!(f, "function\n{{")?;
+
+        for node in &self.body
+        {
+            writeln!(f, "{}", node)?;
+        }
+
+        writeln!(f, "}}")?;
+
+        Ok(())
     }
 }

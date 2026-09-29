@@ -1,5 +1,6 @@
 use super::tokenType::TokenType;
 use location::Location;
+use std::fmt::Display;
 
 pub mod location;
 
@@ -25,5 +26,13 @@ impl Token
     pub fn getLoc(&self) -> &Location
     {
         &self.loc
+    }
+}
+
+impl Display for Token
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result 
+    {
+        write!(f, "{{{}}}", self.getKind())
     }
 }

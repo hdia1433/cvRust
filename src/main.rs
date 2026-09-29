@@ -14,6 +14,10 @@ fn main()
     let mut lexer = Lexer::new(&source);
     lexer.tokenise();
 
+    lexer.toFile().expect("Failed to write to file.");
+
     let mut parser = Parser::new(lexer.getTokens());
     parser.parse();
+
+    parser.toFile();
 }

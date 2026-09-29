@@ -2,7 +2,7 @@ pub mod tokenType;
 pub mod token;
 
 use token::{Token, location::Location};
-use std::{iter::Peekable, str::Chars};
+use std::{iter::Peekable, str::Chars, fs::File, io::{Write, Error}};
 use crate::lexer::tokenType::TokenType;
 
 pub struct Lexer<'a>
@@ -59,7 +59,7 @@ impl Lexer<'_>
 
                 let integer: isize = buffer.parse().expect("Failed to convert buffer to isize");
 
-                self.tokens.push(Token::new(TokenType::Integer(integer), beginLoc.clone()));
+                self.tokens.push(Token::new(TokenType::LitInteger(integer), beginLoc.clone()));
             }
             else 
             {
@@ -89,6 +89,22 @@ impl Lexer<'_>
     pub fn getTokens(&self) -> &Vec<Token>
     {
         &self.tokens
+    }
+
+    pub fn toFile(&self) -> Result<(), Error>
+    {
+        let mut file = File::create("tokens.txt")?;
+
+        write!(file, "[")?;
+
+        for token in &self.tokens
+        {
+            write!(file, "{}", token)?;
+        }
+
+        write!(file, "]")?;
+
+        Ok(())
     }
 
     fn next(&mut self) -> Option<char>

@@ -1,6 +1,6 @@
 use super::lexer::{token::Token, tokenType::TokenType};
 use node::{GlobalScope, Node, Function, VariableDeclaration, BinaryOperation, binaryOperation::Op, Literal, literal::LiteralType};
-use std::{iter::Peekable, slice::Iter};
+use std::{iter::Peekable, slice::Iter, io::{Result, Write}, fs::File};
 
 mod node;
 
@@ -18,7 +18,10 @@ impl<'a> Parser<'a>
 
         Self {iter, ast: GlobalScope::new()}
     }
+}
 
+impl Parser<'_>
+{
     pub fn parse(&mut self)
     {
         while let Some(tok) = self.iter.next()
@@ -79,6 +82,15 @@ impl<'a> Parser<'a>
     pub fn _getAst(&self) -> &GlobalScope
     {
         &self.ast
+    }
+
+    pub fn toFile(&self) -> Result<()>
+    {
+        let mut file = File::create("ast.txt")?;
+
+        write!(file, "{}", self.ast)?;
+
+        Ok(())
     }
 
     fn parseFunction(&mut self, funcType: TokenType, funcName: &str) -> Function
@@ -168,7 +180,7 @@ impl<'a> Parser<'a>
 
         match tok.getKind()
         {
-            TokenType::Integer(integer) => 
+            TokenType::LitInteger(integer) => 
             {
                 Node::Literal(Literal::new(LiteralType::Integer(*integer)))
             },
