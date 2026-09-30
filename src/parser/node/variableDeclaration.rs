@@ -13,6 +13,11 @@ impl VariableDeclaration
     {
         Self {varType, name: name.to_owned()}
     }
+
+    pub fn getVarType(&self) -> &TokenType
+    {
+        &self.varType
+    }
 }
 
 impl Display for VariableDeclaration

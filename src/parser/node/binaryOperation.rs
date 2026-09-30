@@ -1,4 +1,5 @@
 use super::Node;
+use crate::lexer::tokenType::TokenType;
 use std::fmt::Display;
 
 pub enum Op
@@ -26,6 +27,21 @@ impl BinaryOperation
     pub fn new(lhs: Node, op: Op, rhs: Node) -> Self
     {
         Self {lhs: Box::new(lhs), op, rhs: Box::new(rhs)}
+    }
+
+    pub fn getLhs(&self) -> &Box<Node>
+    {
+        &self.lhs
+    }
+
+    pub fn getRhs(&self) -> &Box<Node>
+    {
+        &self.rhs
+    }
+
+    pub fn getType(&self) -> TokenType
+    {
+        self.lhs.getType()
     }
 }
 

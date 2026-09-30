@@ -55,8 +55,6 @@ impl Lexer<'_>
                     buffer.push(ch);
                 }
 
-                buffer = dbg!(buffer);
-
                 let integer: isize = buffer.parse().expect("Failed to convert buffer to isize");
 
                 self.tokens.push(Token::new(TokenType::LitInteger(integer), beginLoc.clone()));
@@ -82,8 +80,6 @@ impl Lexer<'_>
                 }, beginLoc.clone()));
             }
         }
-
-        println!("{:?}", self.tokens);
     }
 
     pub fn getTokens(&self) -> &Vec<Token>

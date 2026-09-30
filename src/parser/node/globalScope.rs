@@ -13,6 +13,11 @@ impl GlobalScope
         Self{functions: Vec::new()}
     }
 
+    pub fn getFunctions(&self) -> &Vec<Function>
+    {
+        &self.functions
+    }
+
     pub fn addFunction(&mut self, function: Function)
     {
         self.functions.push(function);

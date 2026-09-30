@@ -1,8 +1,20 @@
 use std::fmt::Display;
+use crate::lexer::tokenType::TokenType;
 
 pub enum LiteralType
 {
     Integer(isize)
+}
+
+impl LiteralType
+{
+    pub fn getType(&self) -> TokenType
+    {
+        match self
+        {
+            LiteralType::Integer(_) => TokenType::KwInt
+        }
+    }
 }
 
 impl Display for LiteralType
@@ -26,6 +38,11 @@ impl Literal
     pub fn new(value: LiteralType) -> Self
     {
         Self {value}
+    }
+
+    pub fn getType(&self) -> TokenType
+    {
+        self.value.getType()
     }
 }
 

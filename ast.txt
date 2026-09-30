@@ -1,6 +1,6 @@
 GlobalScope
 {
-function
+Function(void main)
 {
 Binary Operation
 {

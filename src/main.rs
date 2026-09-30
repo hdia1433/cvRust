@@ -3,9 +3,11 @@
 use std::{env, fs};
 use lexer::Lexer;
 use parser::Parser;
+use semanticAnalyser::SemanticAnalyser;
 
 mod lexer;
 mod parser;
+mod semanticAnalyser;
 
 fn main()
 {
@@ -20,4 +22,8 @@ fn main()
     parser.parse();
 
     parser.toFile().expect("Parser failed to write to file.");
+
+    let mut semanticAnalyser = SemanticAnalyser::new(parser.getAst());
+
+    semanticAnalyser.analyse();
 }

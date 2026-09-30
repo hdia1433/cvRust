@@ -2,7 +2,7 @@ use super::lexer::{token::Token, tokenType::TokenType};
 use node::{GlobalScope, Node, Function, VariableDeclaration, BinaryOperation, binaryOperation::Op, Literal, literal::LiteralType};
 use std::{iter::Peekable, slice::Iter, io::{Result, Write}, fs::File};
 
-mod node;
+pub mod node;
 
 pub struct Parser<'a>
 {
@@ -79,7 +79,7 @@ impl Parser<'_>
         }
     }
 
-    pub fn _getAst(&self) -> &GlobalScope
+    pub fn getAst(&self) -> &GlobalScope
     {
         &self.ast
     }

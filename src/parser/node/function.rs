@@ -16,6 +16,11 @@ impl Function
         Self {funcType, name: name.to_owned(), body: Vec::new()}
     }
 
+    pub fn getBody(&self) -> &Vec<Node>
+    {
+        &self.body
+    }
+
     pub fn addStatement(&mut self, node: Node)
     {
         self.body.push(node);
