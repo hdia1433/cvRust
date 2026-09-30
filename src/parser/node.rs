@@ -11,7 +11,7 @@ mod variableDeclaration;
 pub mod binaryOperation;
 pub mod literal;
 
-use std::{env::var, fmt::Display};
+use std::fmt::Display;
 
 pub enum Node
 {
