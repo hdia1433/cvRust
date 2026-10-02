@@ -2,3 +2,5 @@
 *.txt
 *.cv
 *.ll
+*.asm
+program
