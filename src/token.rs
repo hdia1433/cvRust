@@ -1,8 +1,10 @@
-use super::tokenType::TokenType;
-use location::Location;
 use std::fmt::Display;
 
 pub mod location;
+pub mod tokenType;
+
+pub use tokenType::TokenType;
+pub use location::Location;
 
 #[derive(Debug)]
 pub struct Token

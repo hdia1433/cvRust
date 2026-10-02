@@ -1,8 +1,7 @@
-use super::lexer::{token::Token, tokenType::TokenType};
-use node::{GlobalScope, Node, Function, VariableDeclaration, BinaryOperation, binaryOperation::Op, Literal, literal::LiteralType};
+use super::{token::{Token, TokenType}};
+use crate::nodes::{GlobalScope, Node, Function, VariableDeclaration, BinaryOperation, binaryOperation::Op, Literal, literal::LiteralType};
 use std::{iter::Peekable, slice::Iter, io::{Result, Write}, fs::File};
 
-pub mod node;
 
 pub struct Parser<'a>
 {
@@ -182,7 +181,7 @@ impl Parser<'_>
         {
             TokenType::LitInteger(integer) => 
             {
-                Node::Literal(Literal::new(LiteralType::Integer(*integer)))
+                Node::Literal(Literal::new(LiteralType::Integer(*integer as i32)))
             },
             _ => panic!("Invalid primary")
         }

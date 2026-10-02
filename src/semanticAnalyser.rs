@@ -1,4 +1,4 @@
-use crate::{lexer::tokenType::TokenType, parser::node::{GlobalScope, Function, VariableDeclaration, BinaryOperation, Node}};
+use crate::{Type, nodes::{GlobalScope, Function, VariableDeclaration, BinaryOperation, Node}};
 
 mod semanticScope;
 
@@ -42,7 +42,7 @@ impl<'a> SemanticAnalyser<'a>
 
     fn analyseVarDecl(&mut self, varDecl: &'a VariableDeclaration)
     {
-        if *varDecl.getVarType() == TokenType::KwVoid
+        if *varDecl.getVarType() == Type::Void
         {
             panic!("A variable cannot be of type 'void'");
         }

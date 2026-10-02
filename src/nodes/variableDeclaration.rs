@@ -1,9 +1,9 @@
-use crate::lexer::tokenType::TokenType;
+use crate::{Type, token::TokenType};
 use std::fmt::Display;
 
 pub struct VariableDeclaration
 {
-    varType: TokenType,
+    varType: Type,
     name: String
 }
 
@@ -11,12 +11,26 @@ impl VariableDeclaration
 {
     pub fn new(varType: TokenType, name: &str) -> Self
     {
-        Self {varType, name: name.to_owned()}
+        Self 
+        {
+            varType: match varType
+            {
+                TokenType::KwInt => Type::Int,
+                TokenType::KwVoid => Type::Void,
+                _ => panic!("A token type of a type required to create a new variable declaration")
+            }, 
+            name: name.to_owned()
+        }
     }
 
-    pub fn getVarType(&self) -> &TokenType
+    pub fn getVarType(&self) -> &Type
     {
         &self.varType
+    }
+
+    pub fn getName(&self) -> &str
+    {
+        &self.name
     }
 }
 

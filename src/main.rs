@@ -1,13 +1,22 @@
 #![allow(non_snake_case)]
 
 use std::{env, fs};
-use lexer::Lexer;
-use parser::Parser;
-use semanticAnalyser::SemanticAnalyser;
+use inkwell::context::Context;
 
 mod lexer;
 mod parser;
 mod semanticAnalyser;
+mod irGenerator;
+pub mod token;
+pub mod nodes;
+pub mod types;
+
+pub use lexer::Lexer;
+pub use parser::Parser;
+pub use semanticAnalyser::SemanticAnalyser;
+pub use irGenerator::IRGenerator;
+pub use token::Token;
+pub use types::Type;
 
 fn main()
 {
@@ -26,4 +35,9 @@ fn main()
     let mut semanticAnalyser = SemanticAnalyser::new(parser.getAst());
 
     semanticAnalyser.analyse();
+
+    let context = Context::create();
+    let mut irGenerator = IRGenerator::new(parser.getAst(), &context);
+
+    irGenerator.translate();
 }

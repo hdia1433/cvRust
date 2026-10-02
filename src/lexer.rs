@@ -1,9 +1,5 @@
-pub mod tokenType;
-pub mod token;
-
-use token::{Token, location::Location};
+use crate::token::{Location, Token, TokenType};
 use std::{iter::Peekable, str::Chars, fs::File, io::{Write, Error}};
-use crate::lexer::tokenType::TokenType;
 
 pub struct Lexer<'a>
 {

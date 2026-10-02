@@ -1,18 +1,27 @@
 use std::fmt::Display;
-use crate::lexer::tokenType::TokenType;
+use crate::Type;
+use inkwell::{values::BasicValueEnum, context::Context};
 
 pub enum LiteralType
 {
-    Integer(isize)
+    Integer(i32)
 }
 
 impl LiteralType
 {
-    pub fn getType(&self) -> TokenType
+    pub fn getType(&self) -> Type
     {
         match self
         {
-            LiteralType::Integer(_) => TokenType::KwInt
+            LiteralType::Integer(_) => Type::Int
+        }
+    }
+
+    pub fn intoBasicValue<'a>(&self, context: &'a Context) -> BasicValueEnum<'a>
+    {
+        match self
+        {
+            LiteralType::Integer(integer) => context.i32_type().const_int(*integer as u64, true).into()
         }
     }
 }
@@ -40,7 +49,12 @@ impl Literal
         Self {value}
     }
 
-    pub fn getType(&self) -> TokenType
+    pub fn getValue(&self) -> &LiteralType
+    {
+       &self.value
+    }
+
+    pub fn getType(&self) -> Type
     {
         self.value.getType()
     }

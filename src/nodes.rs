@@ -3,7 +3,7 @@ pub use function::Function;
 pub use variableDeclaration::VariableDeclaration;
 pub use binaryOperation::BinaryOperation;
 pub use literal::Literal;
-use crate::lexer::tokenType::TokenType;
+use crate::Type;
 
 mod globalScope;
 mod function;
@@ -22,7 +22,7 @@ pub enum Node
 
 impl Node
 {
-    pub fn getType(&self) -> TokenType
+    pub fn getType(&self) -> Type
     {
         match self
         {

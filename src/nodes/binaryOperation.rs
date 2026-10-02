@@ -1,19 +1,9 @@
+mod op;
+
 use super::Node;
-use crate::lexer::tokenType::TokenType;
+pub use op::Op;
+use crate::Type;
 use std::fmt::Display;
-
-pub enum Op
-{
-    Assign,
-}
-
-impl Display for Op
-{
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result 
-    {
-        write!(f, "=")
-    }
-}
 
 pub struct BinaryOperation
 {
@@ -39,7 +29,12 @@ impl BinaryOperation
         &self.rhs
     }
 
-    pub fn getType(&self) -> TokenType
+    pub fn getOp(&self) -> &Op
+    {
+        &self.op
+    }
+
+    pub fn getType(&self) -> Type
     {
         self.lhs.getType()
     }
