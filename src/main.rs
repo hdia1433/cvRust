@@ -1,7 +1,7 @@
 #![allow(non_snake_case)]
 
-use std::{env, fs};
-use inkwell::context::Context;
+use std::{env, fs, path::Path, process::Command};
+use inkwell::{context::Context, targets::{Target, InitializationConfig, TargetMachine, RelocMode, CodeModel, FileType}, OptimizationLevel};
 
 mod lexer;
 mod parser;
@@ -40,4 +40,28 @@ fn main()
     let mut irGenerator = IRGenerator::new(parser.getAst(), &context);
 
     irGenerator.translate();
+
+    Target::initialize_native(&InitializationConfig::default()).expect("Failed to initialise inkwell");
+    let triple = TargetMachine::get_default_triple();
+    let target = Target::from_triple(&triple).expect("Failed to get the target from the triple");
+
+    let targetMachine = target.create_target_machine(&triple, "generic", "", OptimizationLevel::Default, RelocMode::Default, CodeModel::Default).expect("Failed to create target machine");
+
+    let module = irGenerator.getModule();
+
+    module.set_triple(&triple);
+    module.set_data_layout(&targetMachine.get_target_data().get_data_layout());
+
+    targetMachine.write_to_file(module, FileType::Assembly, Path::new("program.asm")).expect("Failed to write to assembly file.");
+    targetMachine.write_to_file(module, FileType::Object, Path::new("program.o")).expect("Failed to write to object file.");
+
+    Command::new("clang")
+        .args
+        ([
+            "program.o",
+            "-o",
+            "program"
+        ])
+        .status()
+        .expect("Failed to compile object file");
 }

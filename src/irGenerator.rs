@@ -21,6 +21,11 @@ impl<'a> IRGenerator<'a>
         Self {ast, context, module, builder, vars: HashMap::new()}
     }
 
+    pub fn getModule(&self) -> &Module<'a>
+    {
+        &self.module
+    }
+
     fn translateGlobalScope(&mut self, globalScope: &'a GlobalScope)
     {
         for func in globalScope.getFunctions()
@@ -93,6 +98,6 @@ impl IRGenerator<'_>
     {
         self.translateGlobalScope(self.ast);
 
-        self.module.print_to_file("ir.txt").expect("Failed to write to ir file.");
+        self.module.print_to_file("ir.ll").expect("Failed to write to ir file.");
     }
 }
