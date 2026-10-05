@@ -20,17 +20,32 @@ pub use types::Type;
 
 fn main()
 {
+    let debug = if cfg!(debug_assertions)
+    {
+        true
+    }
+    else 
+    {
+        false
+    };
+
     let source = fs::read_to_string(env::args().nth(1).expect("Expected file argument")).expect("Failed to read file");
 
     let mut lexer = Lexer::new(&source);
     lexer.tokenise();
 
-    lexer.toFile().expect("Lexer failed to write to file.");
+    if debug
+    {
+        lexer.toFile().expect("Lexer failed to write to file.");
+    }
 
     let mut parser = Parser::new(lexer.getTokens());
     parser.parse();
 
-    parser.toFile().expect("Parser failed to write to file.");
+    if debug
+    {
+        parser.toFile().expect("Parser failed to write to file.");
+    }
 
     let mut semanticAnalyser = SemanticAnalyser::new(parser.getAst());
 
@@ -52,7 +67,10 @@ fn main()
     module.set_triple(&triple);
     module.set_data_layout(&targetMachine.get_target_data().get_data_layout());
 
-    targetMachine.write_to_file(module, FileType::Assembly, Path::new("program.asm")).expect("Failed to write to assembly file.");
+    if debug
+    {
+        targetMachine.write_to_file(module, FileType::Assembly, Path::new("program.asm")).expect("Failed to write to assembly file.");
+    }
     targetMachine.write_to_file(module, FileType::Object, Path::new("program.o")).expect("Failed to write to object file.");
 
     Command::new("clang")
