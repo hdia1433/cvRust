@@ -66,6 +66,43 @@ impl Lexer<'_>
                     '}' => TokenType::PuncCloseBrace,
                     ';' => TokenType::PuncSemi,
                     ' ' => continue,
+                    '/' => 
+                    {
+                        let Some(next) = self.iter.peek() else
+                        {
+                            continue;
+                        };
+                        if *next == '/'
+                        {
+                            while let Some(ch) = self.next() && ch != '\n'
+                            {
+                                   
+                            }
+                            continue;
+                        }
+                        else if *next == '*'
+                        {
+                            loop
+                            {
+                                let Some(ch) = self.next() else
+                                {
+                                    panic!("An error has occurred at the end of the file. A '*/' is needed to end a multiline comment");
+                                };
+                                let Some(next) = self.iter.peek() else
+                                {
+                                    panic!("An error has occurred at the end of the file. A '*/' is needed to end a multiline comment");
+                                };
+
+                                if ch == '*' && *next == '/'
+                                {
+                                    self.next();
+                                    break;
+                                }
+                            }
+                            continue;
+                        }
+                        continue;
+                    },
                     '\n' => 
                     {
                         self.line += 1;

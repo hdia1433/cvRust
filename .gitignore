@@ -3,4 +3,5 @@
 *.cv
 *.ll
 *.asm
+*.o
 program

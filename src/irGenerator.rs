@@ -1,5 +1,5 @@
 use crate::{nodes::{Function, GlobalScope, Node, VariableDeclaration, binaryOperation::{BinaryOperation, Op}}};
-use inkwell::{context::Context, module::Module, builder::Builder, values::PointerValue};
+use inkwell::{builder::Builder, context::Context, module::Module, values::{FunctionValue, PointerValue}};
 use std::collections::HashMap;
 
 pub struct IRGenerator<'a>
@@ -8,6 +8,7 @@ pub struct IRGenerator<'a>
     context: &'a Context,
     module: Module<'a>,
     builder: Builder<'a>,
+    funcs: HashMap<&'a str, FunctionValue<'a>>,
     vars: HashMap<&'a str, PointerValue<'a>>
 }
 
@@ -18,7 +19,7 @@ impl<'a> IRGenerator<'a>
         let module = context.create_module("cv_program");
         let builder = context.create_builder();
 
-        Self {ast, context, module, builder, vars: HashMap::new()}
+        Self {ast, context, module, builder, funcs: HashMap::new(), vars: HashMap::new()}
     }
 
     pub fn getModule(&self) -> &Module<'a>
@@ -37,7 +38,16 @@ impl<'a> IRGenerator<'a>
     fn translateFunction(&mut self, func: &'a Function)
     {
         let funcType = func.getType().fnType(self.context,&[], false);
-        let function = self.module.add_function(func.getName(), funcType, None);
+        let function = self.module.add_function(
+            if func.getName() == "main"
+            {
+                "__cv__main"
+            }
+            else 
+            {
+                func.getName()
+            }, 
+            funcType, None);
 
         let entry = self.context.append_basic_block(function, "entry");
 
@@ -47,6 +57,13 @@ impl<'a> IRGenerator<'a>
         {
             self.translateNode(node);
         }
+
+        if *func.getNoReturn()
+        {
+            self.builder.build_return(None).expect("Failed to add a void return");
+        }
+
+        self.funcs.insert(func.getName(), function);
     }
 
     pub fn translateVarDecl(&mut self, varDecl: &'a VariableDeclaration)
@@ -97,6 +114,14 @@ impl IRGenerator<'_>
     pub fn translate(&mut self)
     {
         self.translateGlobalScope(self.ast);
+
+        let llvmMain = self.module.add_function("main", self.context.i32_type().fn_type(&[], false), None);
+
+        let entry = self.context.append_basic_block(llvmMain, "entry");
+        self.builder.position_at_end(entry);
+
+        self.builder.build_call(*self.funcs.get("main").expect("Failed to get main function"), &[], "main").expect("Failed to add a call to cv's main to llvm's main function");
+        self.builder.build_return(Some(&self.context.i32_type().const_int(0, false))).expect("Failed to add a return statement to llvm's main function");
 
         self.module.print_to_file("ir.ll").expect("Failed to write to ir file.");
     }

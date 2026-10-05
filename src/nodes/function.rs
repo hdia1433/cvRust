@@ -7,15 +7,14 @@ pub struct Function
 {
     funcType: Type,
     name: String,
-    body: Vec<Node>
+    body: Vec<Node>,
+    noReturn: bool
 }
 
 impl Function
 {
     pub fn new(funcType: TokenType, name: &str) -> Self
     {
-        
-
         Self 
         {
             funcType: match funcType
@@ -25,7 +24,8 @@ impl Function
                 _ => panic!("A token type of a type is needed to create a function")
             }, 
             name: name.to_owned(), 
-            body: Vec::new()
+            body: Vec::new(),
+            noReturn: false
         }
     }
 
@@ -42,6 +42,16 @@ impl Function
     pub fn getBody(&self) -> &Vec<Node>
     {
         &self.body
+    }
+
+    pub fn getNoReturn(&self) -> &bool
+    {
+        &self.noReturn
+    }
+
+    pub fn setRoReturn(&mut self, noReturn: bool)
+    {
+        self.noReturn = noReturn;
     }
 
     pub fn addStatement(&mut self, node: Node)

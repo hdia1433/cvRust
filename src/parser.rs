@@ -98,7 +98,6 @@ impl Parser<'_>
 
         while let Some(next) = self.iter.peek() && *next.getKind() != TokenType::PuncCloseBrace
         {
-
             function.addStatement(self.parseStatement());
         }
 
@@ -111,6 +110,8 @@ impl Parser<'_>
         {
             panic!("An error has occurred at {}. A function declaration must end in a '}}'.", tok.getLoc());
         }
+
+        function.setRoReturn(true);
 
         function
     }
