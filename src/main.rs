@@ -47,14 +47,14 @@ fn main()
         parser.toFile().expect("Parser failed to write to file.");
     }
 
-    let mut semanticAnalyser = SemanticAnalyser::new(parser.getAst());
+    let mut semanticAnalyser = SemanticAnalyser::new();
 
-    semanticAnalyser.analyse();
+    semanticAnalyser.analyse(parser.getAstMut());
 
     let context = Context::create();
-    let mut irGenerator = IRGenerator::new(parser.getAst(), &context);
+    let mut irGenerator = IRGenerator::new(&context);
 
-    irGenerator.translate();
+    irGenerator.translate(parser.getAst());
 
     Target::initialize_native(&InitializationConfig::default()).expect("Failed to initialise inkwell");
     let triple = TargetMachine::get_default_triple();

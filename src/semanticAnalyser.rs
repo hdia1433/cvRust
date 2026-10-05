@@ -1,59 +1,67 @@
-use crate::{Type, nodes::{GlobalScope, Function, VariableDeclaration, BinaryOperation, Node}};
+use crate::{Type, nodes::{BinaryOperation, Function, GlobalScope, Node, VariableAccess, VariableDeclaration}};
 
 mod semanticScope;
 
 pub use semanticScope::SemanticScope;
 
-pub struct SemanticAnalyser<'a>
+pub struct SemanticAnalyser
 {
-    ast: &'a GlobalScope,
-    varScopes: Vec<SemanticScope<'a>>
+    varScopes: Vec<SemanticScope>
 }
 
-impl<'a> SemanticAnalyser<'a>
+impl SemanticAnalyser
 {
-    pub fn new(ast: &'a GlobalScope) -> Self
+    pub fn new() -> Self
     {
-        Self {ast, varScopes: Vec::new()}
+        Self {varScopes: Vec::new()}
     }
 
-    pub fn analyse(&mut self)
+    pub fn analyse(&mut self, ast: &mut GlobalScope)
     {
-        self.analyseGlobalScope(self.ast);
-    }
+        let functions = ast.getFunctionsMut();
 
-    fn analyseGlobalScope(&mut self, globalScope: &'a GlobalScope)
-    {
-        for func in globalScope.getFunctions()
+        for func in functions
         {
             self.analyseFunction(func);
         }
     }
 
-    fn analyseFunction(&mut self, func: &'a Function)
+    fn analyseFunction(&mut self, func: &mut Function)
     {
         self.varScopes.push(SemanticScope::new());
 
-        for statement in func.getBody()
+        for statement in func.getBodyMut()
         {
             self.analyseNode(statement);
         }
     }
 
-    fn analyseVarDecl(&mut self, varDecl: &'a VariableDeclaration)
+    fn analyseVarDecl(&mut self, varDecl: &mut VariableDeclaration)
     {
         if *varDecl.getVarType() == Type::Void
         {
             panic!("A variable cannot be of type 'void'");
         }
 
-        self.varScopes.last_mut().expect("Failed to get last value in varScopes").addVar(varDecl);
+        self.varScopes.last_mut().expect("Failed to get last value in varScopes").addVar(varDecl.clone());
     }
 
-    fn analyseBinaryOp(&mut self, binaryOp: &'a BinaryOperation)
+    fn analyseVarAccess(&mut self, varAccess: &mut VariableAccess)
     {
-        self.analyseNode(binaryOp.getLhs());
-        self.analyseNode(binaryOp.getRhs());
+        let exists = self.checkForVar(varAccess.getName());
+
+        let Some(varType) = exists else
+        {
+            panic!("The variable is undeclared");
+        };
+
+        varAccess.setVarType(varType);
+    }
+
+    fn analyseBinaryOp(&mut self, binaryOp: &mut BinaryOperation)
+    {
+        self.analyseNode(binaryOp.getLhsMut());
+        self.analyseNode(binaryOp.getRhsMut());
 
         if binaryOp.getLhs().getType() != binaryOp.getRhs().getType()
         {
@@ -61,14 +69,30 @@ impl<'a> SemanticAnalyser<'a>
         }
     }
 
-    fn analyseNode(&mut self, node: &'a Node)
+    fn analyseNode(&mut self, node: &mut Node)
     {
         match node
         {
             Node::VariableDeclaration(varDecl) => self.analyseVarDecl(varDecl),
-            Node::VariableAccess(varAccess) => todo!(),
+            Node::VariableAccess(varAccess) => self.analyseVarAccess(varAccess),
             Node::BinaryOperation(binaryOp) => self.analyseBinaryOp(binaryOp),
             Node::Literal(_) => (),
         }
+    }
+
+    fn checkForVar(&mut self, name: &str) -> Option<Type>
+    {
+        for scope in self.varScopes.iter().rev()
+        {
+            for var in scope.getVars().iter().rev()
+            {
+                if var.getName() == name
+                {
+                    return Some(var.getVarType().clone());
+                }
+            }
+        }
+
+        None
     }
 }

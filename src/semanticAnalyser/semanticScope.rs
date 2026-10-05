@@ -1,22 +1,24 @@
 use crate::nodes::VariableDeclaration;
 
-pub struct SemanticScope<'a>
+pub struct SemanticScope
 {
-    vars: Vec<&'a VariableDeclaration>
+    vars: Vec<VariableDeclaration>
 }
 
-impl SemanticScope<'_>
+impl SemanticScope
 {
     pub fn new() -> Self
     {
         Self {vars: Vec::new()}
     }
-}
 
-impl<'a> SemanticScope<'a>
-{
-    pub fn addVar(&mut self, var: &'a VariableDeclaration)
+    pub fn addVar(&mut self, var: VariableDeclaration)
     {
         self.vars.push(var);
+    }
+
+    pub fn getVars(&self) -> &Vec<VariableDeclaration>
+    {
+        &self.vars
     }
 }

@@ -34,7 +34,7 @@ impl Function
         &self.funcType
     }
 
-    pub fn getName(&self) -> &str
+    pub fn getName(&self) -> &String
     {
         &self.name
     }
@@ -42,6 +42,11 @@ impl Function
     pub fn getBody(&self) -> &Vec<Node>
     {
         &self.body
+    }
+
+    pub fn getBodyMut(&mut self) -> &mut Vec<Node>
+    {
+        &mut self.body
     }
 
     pub fn getNoReturn(&self) -> &bool

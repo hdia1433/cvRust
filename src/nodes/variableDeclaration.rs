@@ -1,6 +1,7 @@
 use crate::{Type, token::TokenType};
 use std::fmt::Display;
 
+#[derive(Clone)]
 pub struct VariableDeclaration
 {
     varType: Type,

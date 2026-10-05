@@ -29,6 +29,16 @@ impl BinaryOperation
         &self.rhs
     }
 
+    pub fn getLhsMut(&mut self) -> &mut Box<Node>
+    {
+        &mut self.lhs
+    }
+
+    pub fn getRhsMut(&mut self) -> &mut Box<Node>
+    {
+        &mut self.rhs
+    }
+
     pub fn getOp(&self) -> &Op
     {
         &self.op

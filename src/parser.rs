@@ -83,6 +83,11 @@ impl Parser<'_>
         &self.ast
     }
 
+    pub fn getAstMut(&mut self) -> &mut GlobalScope
+    {
+        &mut self.ast
+    }
+
     pub fn toFile(&self) -> Result<()>
     {
         let mut file = File::create("ast.txt")?;

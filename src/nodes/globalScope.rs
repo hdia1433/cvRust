@@ -18,6 +18,11 @@ impl GlobalScope
         &self.functions
     }
 
+    pub fn getFunctionsMut(&mut self) -> &mut Vec<Function>
+    {
+        &mut self.functions
+    }
+
     pub fn addFunction(&mut self, function: Function)
     {
         self.functions.push(function);

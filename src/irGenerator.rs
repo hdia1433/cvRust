@@ -4,22 +4,21 @@ use std::collections::HashMap;
 
 pub struct IRGenerator<'a>
 {
-    ast: &'a GlobalScope,
     context: &'a Context,
     module: Module<'a>,
     builder: Builder<'a>,
-    funcs: HashMap<&'a str, FunctionValue<'a>>,
-    vars: HashMap<&'a str, PointerValue<'a>>
+    funcs: HashMap<String, FunctionValue<'a>>,
+    vars: HashMap<String, PointerValue<'a>>
 }
 
 impl<'a> IRGenerator<'a>
 {
-    pub fn new(ast: &'a GlobalScope, context: &'a Context) -> Self
+    pub fn new(context: &'a Context) -> Self
     {
         let module = context.create_module("cv_program");
         let builder = context.create_builder();
 
-        Self {ast, context, module, builder, funcs: HashMap::new(), vars: HashMap::new()}
+        Self {context, module, builder, funcs: HashMap::new(), vars: HashMap::new()}
     }
 
     pub fn getModule(&self) -> &Module<'a>
@@ -27,7 +26,7 @@ impl<'a> IRGenerator<'a>
         &self.module
     }
 
-    fn translateGlobalScope(&mut self, globalScope: &'a GlobalScope)
+    fn translateGlobalScope(&mut self, globalScope: &GlobalScope)
     {
         for func in globalScope.getFunctions()
         {
@@ -35,7 +34,7 @@ impl<'a> IRGenerator<'a>
         }
     }
 
-    fn translateFunction(&mut self, func: &'a Function)
+    fn translateFunction(&mut self, func: &Function)
     {
         let funcType = func.getType().fnType(self.context,&[], false);
         let function = self.module.add_function(
@@ -63,17 +62,17 @@ impl<'a> IRGenerator<'a>
             self.builder.build_return(None).expect("Failed to add a void return");
         }
 
-        self.funcs.insert(func.getName(), function);
+        self.funcs.insert(func.getName().to_string(), function);
     }
 
-    pub fn translateVarDecl(&mut self, varDecl: &'a VariableDeclaration)
+    pub fn translateVarDecl(&mut self, varDecl: &VariableDeclaration)
     {
         let var = self.builder.build_alloca(varDecl.getVarType().varType(&self.context), varDecl.getName()).expect("Failed to allocate a variable");
 
-        self.vars.insert(varDecl.getName(), var);
+        self.vars.insert(varDecl.getName().to_string(), var);
     }
 
-    fn translateNode(&mut self, node: &'a Node)
+    fn translateNode(&mut self, node: &Node)
     {
         match node 
         {
@@ -83,7 +82,7 @@ impl<'a> IRGenerator<'a>
         };
     }
 
-    pub fn translateBinaryOp(&mut self, binaryOp: &'a BinaryOperation)
+    pub fn translateBinaryOp(&mut self, binaryOp: &BinaryOperation)
     {
         if *binaryOp.getOp() == Op::Assign
         {
@@ -111,9 +110,9 @@ impl<'a> IRGenerator<'a>
 
 impl IRGenerator<'_>
 {
-    pub fn translate(&mut self)
+    pub fn translate(&mut self, ast: &GlobalScope)
     {
-        self.translateGlobalScope(self.ast);
+        self.translateGlobalScope(ast);
 
         let llvmMain = self.module.add_function("main", self.context.i32_type().fn_type(&[], false), None);
 

@@ -14,9 +14,19 @@ impl VariableAccess
         Self {name: name.to_owned(), varType: Type::default()}
     }
 
+    pub fn getName(&self) -> &String
+    {
+        &self.name
+    }
+
     pub fn getVarType(&self) -> &Type
     {
         &self.varType
+    }
+
+    pub fn setVarType(&mut self, varType: Type)
+    {
+        self.varType = varType;
     }
 }
 
