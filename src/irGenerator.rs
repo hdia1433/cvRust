@@ -1,5 +1,5 @@
-use crate::{nodes::{Function, GlobalScope, Node, VariableDeclaration, binaryOperation::{BinaryOperation, Op}}};
-use inkwell::{builder::Builder, context::Context, module::Module, values::{FunctionValue, PointerValue}};
+use crate::{nodes::{Function, GlobalScope, Node, VariableDeclaration, VariableAccess, binaryOperation::{BinaryOperation, Op}}};
+use inkwell::{builder::Builder, context::Context, module::Module, values::{BasicValueEnum, FunctionValue, PointerValue}};
 use std::collections::HashMap;
 
 pub struct IRGenerator<'a>
@@ -72,13 +72,19 @@ impl<'a> IRGenerator<'a>
         self.vars.insert(varDecl.getName().to_string(), var);
     }
 
+    pub fn translateVarAccess(&self, varAccess: &VariableAccess) -> BasicValueEnum<'_>
+    {
+        self.builder.build_load(varAccess.getVarType().varType(&self.context), *self.vars.get(varAccess.getName()).expect("Failed to retrieve variable"), format!("{}_value", varAccess.getName()).as_str()).expect("Failed to get value from variable")
+    }
+
     fn translateNode(&mut self, node: &Node)
     {
         match node 
         {
             Node::VariableDeclaration(varDecl) => self.translateVarDecl(varDecl),
+            Node::VariableAccess(_) => panic!("Variable access cannot be directly translated"),
             Node::BinaryOperation(binaryOp) => self.translateBinaryOp(binaryOp),
-            _ => panic!("A literal cannot be translated")
+            Node::Literal(_) => panic!("A literal cannot be translated")
         };
     }
 
@@ -86,24 +92,32 @@ impl<'a> IRGenerator<'a>
     {
         if *binaryOp.getOp() == Op::Assign
         {
-            match binaryOp.getLhs().as_ref()
+            let var = match binaryOp.getLhs().as_ref()
             {
                 Node::VariableDeclaration(varDecl) =>
                 {
                     self.translateVarDecl(varDecl);
 
-                    let var = *self.vars.get(varDecl.getName()).expect("Couldn't find variable");
-
-                    let value = match binaryOp.getRhs().as_ref()
-                    {
-                        Node::Literal(literal) => literal.getValue().intoBasicValue(&self.context),
-                        _ => panic!("A variable needs to be a assigned to a literal")
-                    };
-
-                    self.builder.build_store(var, value).expect("Failed to write to a variable");
+                    *self.vars.get(varDecl.getName()).expect("Couldn't find variable")
+                },
+                Node::VariableAccess(varAccess) =>
+                {
+                    *self.vars.get(varAccess.getName()).expect("Failed to find variable")
                 },
                 _ => panic!("Only a variable declaration can be assigned to.")
-            }
+            };
+
+            let value = match binaryOp.getRhs().as_ref()
+            {
+                Node::Literal(literal) => literal.getValue().intoBasicValue(&self.context),
+                Node::VariableAccess(varAccess) => 
+                {
+                    self.translateVarAccess(varAccess)
+                }
+                _ => panic!("A variable needs to be a assigned to a literal")
+            };
+
+            self.builder.build_store(var, value).expect("Failed to write to a variable");
         }
     }
 }
@@ -121,7 +135,10 @@ impl IRGenerator<'_>
 
         self.builder.build_call(*self.funcs.get("main").expect("Failed to get main function"), &[], "main").expect("Failed to add a call to cv's main to llvm's main function");
         self.builder.build_return(Some(&self.context.i32_type().const_int(0, false))).expect("Failed to add a return statement to llvm's main function");
+    }
 
-        self.module.print_to_file("ir.ll").expect("Failed to write to ir file.");
+    pub fn toFile(&self)
+    {
+        self.module.print_to_file("ir.ll").expect("Failed to write ir to file");
     }
 }
