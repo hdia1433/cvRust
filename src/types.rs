@@ -1,11 +1,13 @@
 use std::fmt::Display;
 use inkwell::{context::Context, types::{BasicMetadataTypeEnum, FunctionType, BasicTypeEnum}};
 
-#[derive(PartialEq, Clone)]
+#[derive(PartialEq, Clone, Default)]
 pub enum Type
 {
     Void,
-    Int
+    Int,
+    #[default]
+    Error
 }
 
 impl Type
@@ -15,7 +17,8 @@ impl Type
         match self
         {
             Type::Void => context.void_type().fn_type(args, isVarArgs),
-            Type::Int => context.i32_type().fn_type(args, isVarArgs)
+            Type::Int => context.i32_type().fn_type(args, isVarArgs),
+            Type::Error => panic!("Cannot convert Type::Error into a function type")
         }
     }
 
@@ -24,7 +27,8 @@ impl Type
         match self
         {
             Type::Int => context.i32_type().into(),
-            _ => panic!("Variables cannot be of the type <void>")
+            Type::Void => panic!("Variables cannot be of the type <void>"),
+            Type::Error => panic!("Type::Error couldn't be converted into variable type")
         }
     }
 }
@@ -37,7 +41,8 @@ impl Display for Type
         match self
         {
             Type::Int => "<int>",
-            Type::Void => "<void>"
+            Type::Void => "<void>",
+            Type::Error => "<Error>"
         })?;
 
         Ok(())

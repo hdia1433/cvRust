@@ -66,6 +66,7 @@ impl<'a> SemanticAnalyser<'a>
         match node
         {
             Node::VariableDeclaration(varDecl) => self.analyseVarDecl(varDecl),
+            Node::VariableAccess(varAccess) => todo!(),
             Node::BinaryOperation(binaryOp) => self.analyseBinaryOp(binaryOp),
             Node::Literal(_) => (),
         }

@@ -1,5 +1,5 @@
 use super::{token::{Token, TokenType}};
-use crate::nodes::{GlobalScope, Node, Function, VariableDeclaration, BinaryOperation, binaryOperation::Op, Literal, literal::LiteralType};
+use crate::nodes::{BinaryOperation, Function, GlobalScope, Literal, Node, VariableAccess, VariableDeclaration, binaryOperation::Op, literal::LiteralType};
 use std::{iter::Peekable, slice::Iter, io::{Result, Write}, fs::File};
 
 
@@ -146,7 +146,7 @@ impl Parser<'_>
         {
             self.iter.next().expect("Failed to get '=' token.");
 
-            let rhs = self.parsePrimary();
+            let rhs = self.parseExpression();
 
             lhs = Node::BinaryOperation(BinaryOperation::new(lhs, Op::Assign, rhs))
         }
@@ -184,6 +184,7 @@ impl Parser<'_>
             {
                 Node::Literal(Literal::new(LiteralType::Integer(*integer as i32)))
             },
+            TokenType::Identifier(ident) => Node::VariableAccess(VariableAccess::new(ident)),
             _ => panic!("Invalid primary")
         }
     }
