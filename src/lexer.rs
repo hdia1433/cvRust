@@ -60,6 +60,8 @@ impl Lexer<'_>
                 self.tokens.push(Token::new(match ch
                 {
                     '=' => TokenType::OpAssign,
+                    '+' => TokenType::OpPlus,
+                    '-' => TokenType::OpMinus,
                     '(' => TokenType::PuncOpenParen,
                     ')' => TokenType::PuncCloseParen,
                     '{' => TokenType::PuncOpenBrace,
