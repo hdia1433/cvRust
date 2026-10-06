@@ -145,15 +145,38 @@ impl Parser<'_>
 
     fn parseVarAssign(&mut self) -> Node
     {
-        let mut lhs = self.parsePrimary();
+        let mut lhs = self.parseAdd();
 
         if let Some(next) = self.iter.peek() && *next.getKind() == TokenType::OpAssign
         {
-            self.iter.next().expect("Failed to get '=' token.");
+            self.iter.next().expect("Failed to get '=' token");
 
             let rhs = self.parseExpression();
 
             lhs = Node::BinaryOperation(BinaryOperation::new(lhs, Op::Assign, rhs))
+        }
+
+        lhs
+    }
+
+    fn parseAdd(&mut self) -> Node
+    {
+        let mut lhs = self.parsePrimary();
+
+        if let Some(next) = self.iter.peek() && (*next.getKind() == TokenType::OpPlus || *next.getKind() == TokenType::OpMinus)
+        {
+            let tok = self.iter.next().expect("Failed to get '+' or '-' token");
+
+            let rhs = self.parseExpression();
+
+            let op = match tok.getKind()
+            {
+                TokenType::OpPlus => Op::Add,
+                TokenType::OpMinus => Op::Sub,
+                _ => unreachable!()
+            };
+
+            lhs = Node::BinaryOperation(BinaryOperation::new(lhs, op, rhs));
         }
 
         lhs

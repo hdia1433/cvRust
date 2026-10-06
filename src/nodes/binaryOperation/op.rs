@@ -4,12 +4,19 @@ use std::fmt::Display;
 pub enum Op
 {
     Assign,
+    Add,
+    Sub
 }
 
 impl Display for Op
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result 
     {
-        write!(f, "=")
+        write!(f, "{}", match self
+        {
+            Op::Assign => "=",
+            Op::Add => "+",
+            Op::Sub => "-"
+        })
     }
 }

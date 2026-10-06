@@ -2,6 +2,8 @@ use crate::{nodes::{Function, GlobalScope, Node, VariableDeclaration, VariableAc
 use inkwell::{builder::Builder, context::Context, module::Module, values::{BasicValueEnum, FunctionValue, PointerValue}};
 use std::collections::HashMap;
 
+
+
 pub struct IRGenerator<'a>
 {
     context: &'a Context,
@@ -65,30 +67,34 @@ impl<'a> IRGenerator<'a>
         self.funcs.insert(func.getName().to_string(), function);
     }
 
-    pub fn translateVarDecl(&mut self, varDecl: &VariableDeclaration)
+    pub fn translateVarDecl(&mut self, varDecl: &VariableDeclaration) -> Option<BasicValueEnum<'a>>
     {
-        let var = self.builder.build_alloca(varDecl.getVarType().varType(&self.context), varDecl.getName()).expect("Failed to allocate a variable");
+        let varType = varDecl.getVarType().varType(&self.context);
+
+        let var = self.builder.build_alloca(varType, varDecl.getName()).expect("Failed to allocate a variable");
 
         self.vars.insert(varDecl.getName().to_string(), var);
+
+        None
     }
 
-    pub fn translateVarAccess(&self, varAccess: &VariableAccess) -> BasicValueEnum<'_>
+    pub fn translateVarAccess(&self, varAccess: &VariableAccess) -> BasicValueEnum<'a>
     {
         self.builder.build_load(varAccess.getVarType().varType(&self.context), *self.vars.get(varAccess.getName()).expect("Failed to retrieve variable"), format!("{}_value", varAccess.getName()).as_str()).expect("Failed to get value from variable")
     }
 
-    fn translateNode(&mut self, node: &Node)
+    fn translateNode(&mut self, node: &Node) -> Option<BasicValueEnum<'a>>
     {
         match node 
         {
             Node::VariableDeclaration(varDecl) => self.translateVarDecl(varDecl),
-            Node::VariableAccess(_) => panic!("Variable access cannot be directly translated"),
+            Node::VariableAccess(varAccess) => Some(self.translateVarAccess(varAccess)),
             Node::BinaryOperation(binaryOp) => self.translateBinaryOp(binaryOp),
-            Node::Literal(_) => panic!("A literal cannot be translated")
-        };
+            Node::Literal(literal) => Some(literal.getValue().intoBasicValue(&self.context))
+        }
     }
 
-    pub fn translateBinaryOp(&mut self, binaryOp: &BinaryOperation)
+    fn translateBinaryOp(&mut self, binaryOp: &BinaryOperation) -> Option<BasicValueEnum<'a>>
     {
         if *binaryOp.getOp() == Op::Assign
         {
@@ -107,17 +113,32 @@ impl<'a> IRGenerator<'a>
                 _ => panic!("Only a variable declaration can be assigned to.")
             };
 
-            let value = match binaryOp.getRhs().as_ref()
+            let Some(value) = self.translateNode(binaryOp.getRhs().as_ref()) else
             {
-                Node::Literal(literal) => literal.getValue().intoBasicValue(&self.context),
-                Node::VariableAccess(varAccess) => 
-                {
-                    self.translateVarAccess(varAccess)
-                }
-                _ => panic!("A variable needs to be a assigned to a literal")
+                panic!("A variable must be assigned to a basic value")
             };
 
             self.builder.build_store(var, value).expect("Failed to write to a variable");
+
+            Some(value)
+        }
+        else 
+        {
+            let BasicValueEnum::IntValue(lhs) = self.translateNode(binaryOp.getLhs()).expect("LHS Wasn't a basic value") else
+            {
+                panic!("LHS Wasn't an int value")
+            };
+            let BasicValueEnum::IntValue(rhs) = self.translateNode(binaryOp.getRhs()).expect("RHS Wasn't a basic value") else
+            {
+                panic!("RHS wasn't an int value")
+            };
+
+            match binaryOp.getOp()
+            {
+                Op::Add => Some(BasicValueEnum::IntValue(self.builder.build_int_add(lhs, rhs, "result").expect("Failed to build add instruction"))),
+                Op::Sub => Some(BasicValueEnum::IntValue(self.builder.build_int_sub(lhs, rhs, "Result").expect("Failed to build sub instruction"))),
+                _ => unreachable!()
+            }
         }
     }
 }
