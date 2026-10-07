@@ -13,7 +13,7 @@ impl<'a> Lexer<'a>
 {
     pub fn new(source: &'a String) -> Self
     {
-        Self {iter: source.chars().into_iter().peekable(), tokens: Vec::new(), line: 0, column: 0}
+        Self {iter: source.chars().into_iter().peekable(), tokens: Vec::new(), line: 1, column: 0}
     }
 }
 
@@ -40,20 +40,41 @@ impl Lexer<'_>
                 {
                     "void" => TokenType::KwVoid,
                     "int" => TokenType::KwInt,
+                    "float" => TokenType::KwFloat,
                     _ => TokenType::Identifier(buffer.clone())
                 }, beginLoc.clone()));
             }
             else if ch.is_numeric()
             {
-                while let Some(next) = self.iter.peek() && next.is_numeric()
+                let mut dotNum:i32 = 0;
+                while let Some(next) = self.iter.peek() && (next.is_numeric() || *next == '.')
                 {
                     ch = self.next().expect("Next character didn't exist.");
+                    if ch == '.'
+                    {
+                        dotNum += 1;
+                    }
                     buffer.push(ch);
                 }
 
-                let integer: isize = buffer.parse().expect("Failed to convert buffer to isize");
+                let tok:Token = match dotNum
+                {
+                    0 =>
+                    {
+                        let integer: i32 = buffer.parse().expect("Failed to convert buffer to i32");
+                        Token::new(TokenType::LitInteger(integer), beginLoc.clone())
+                    },
+                    1 =>
+                    {
+                        let float:f32 = buffer.parse().expect("Failed to convert buffer to f32");
+                        Token::new(TokenType::LitFloat(float), beginLoc.clone())
+                    },
+                    _ => panic!("A floating point value can only contain 1 '.'")
+                };
 
-                self.tokens.push(Token::new(TokenType::LitInteger(integer), beginLoc.clone()));
+                
+
+                self.tokens.push(tok);
             }
             else 
             {

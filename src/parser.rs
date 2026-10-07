@@ -225,10 +225,11 @@ impl Parser<'_>
         {
             TokenType::LitInteger(integer) => 
             {
-                Node::Literal(Literal::new(LiteralType::Integer(*integer as i32)))
+                Node::Literal(Literal::new(LiteralType::Integer(*integer)))
             },
+            TokenType::LitFloat(float) => Node::Literal(Literal::new(LiteralType::Float(*float))),
             TokenType::Identifier(ident) => Node::VariableAccess(VariableAccess::new(ident)),
-            _ => panic!("Invalid primary")
+            _ => unreachable!()
         }
     }
 

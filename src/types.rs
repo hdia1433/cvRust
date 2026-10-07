@@ -6,6 +6,7 @@ pub enum Type
 {
     Void,
     Int,
+    Float,
     #[default]
     Error
 }
@@ -18,6 +19,7 @@ impl Type
         {
             Type::Void => context.void_type().fn_type(args, isVarArgs),
             Type::Int => context.i32_type().fn_type(args, isVarArgs),
+            Type::Float => context.f32_type().fn_type(args, isVarArgs),
             Type::Error => panic!("Cannot convert Type::Error into a function type")
         }
     }
@@ -27,6 +29,7 @@ impl Type
         match self
         {
             Type::Int => context.i32_type().into(),
+            Type::Float => context.f32_type().into(),
             Type::Void => panic!("Variables cannot be of the type <void>"),
             Type::Error => panic!("Type::Error couldn't be converted into variable type")
         }
@@ -41,6 +44,7 @@ impl Display for Type
         match self
         {
             Type::Int => "<int>",
+            Type::Float => "<float>",
             Type::Void => "<void>",
             Type::Error => "<Error>"
         })?;

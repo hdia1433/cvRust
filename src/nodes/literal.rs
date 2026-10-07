@@ -4,7 +4,8 @@ use inkwell::{values::BasicValueEnum, context::Context};
 
 pub enum LiteralType
 {
-    Integer(i32)
+    Integer(i32),
+    Float(f32)
 }
 
 impl LiteralType
@@ -13,7 +14,8 @@ impl LiteralType
     {
         match self
         {
-            LiteralType::Integer(_) => Type::Int
+            LiteralType::Integer(_) => Type::Int,
+            LiteralType::Float(_) => Type::Float
         }
     }
 
@@ -21,7 +23,8 @@ impl LiteralType
     {
         match self
         {
-            LiteralType::Integer(integer) => context.i32_type().const_int(*integer as u64, true).into()
+            LiteralType::Integer(integer) => context.i32_type().const_int(*integer as u64, true).into(),
+            LiteralType::Float(float) => context.f32_type().const_float(*float as f64).into()
         }
     }
 }
@@ -32,7 +35,8 @@ impl Display for LiteralType
     {
         match self
         {
-            LiteralType::Integer(integer) => write!(f, "Integer: {}", integer)
+            LiteralType::Integer(integer) => write!(f, "Integer: {}", integer),
+            LiteralType::Float(float) => write!(f, "Float: {}", float)
         }
     }
 }

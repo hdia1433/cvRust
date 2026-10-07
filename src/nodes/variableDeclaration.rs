@@ -17,7 +17,7 @@ impl VariableDeclaration
             varType: match varType
             {
                 TokenType::KwInt => Type::Int,
-                TokenType::KwVoid => Type::Void,
+                TokenType::KwFloat => Type::Float,
                 _ => panic!("A token type of a type required to create a new variable declaration")
             }, 
             name: name.to_owned()

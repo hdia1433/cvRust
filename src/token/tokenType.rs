@@ -5,6 +5,7 @@ pub enum TokenType
 {
     KwVoid,
     KwInt,
+    KwFloat,
     OpAssign,
     OpPlus,
     OpMinus,
@@ -15,14 +16,15 @@ pub enum TokenType
     PuncCloseBrace,
     PuncSemi,
     Identifier(String),
-    LitInteger(isize)
+    LitInteger(i32),
+    LitFloat(f32)
 }
 
 impl TokenType
 {
     pub fn isType(&self) -> bool
     {
-        *self == Self::KwVoid || *self == Self::KwInt
+        *self == Self::KwVoid || *self == Self::KwInt || *self == Self::KwFloat
     }
 }
 
@@ -32,8 +34,9 @@ impl Display for TokenType
     {
         match self
         {
-            TokenType::KwVoid => write!(f, "void"),
-            TokenType::KwInt => write!(f, "int"),
+            TokenType::KwVoid => write!(f, "KW: void"),
+            TokenType::KwInt => write!(f, "KW: int"),
+            TokenType::KwFloat => write!(f, "KW: float"),
             TokenType::OpAssign => write!(f, "OP_ASSIGN"),
             TokenType::OpPlus => write!(f, "OP_PLUS"),
             TokenType::OpMinus => write!(f, "OP_MINUS"),
@@ -43,8 +46,9 @@ impl Display for TokenType
             TokenType::PuncOpenBrace => write!(f, "OPEN_BRACE"),
             TokenType::PuncCloseBrace => write!(f, "CLOSE_BRACE"),
             TokenType::PuncSemi => write!(f, "SEMI_COLON"),
-            TokenType::Identifier(name) => write!(f, "IDENTIFIER: {}", name),
-            TokenType::LitInteger(integer) => write!(f, "INTEGER_LITERAL: {}", integer)
+            TokenType::Identifier(name) => write!(f, "IDENT: {}", name),
+            TokenType::LitInteger(integer) => write!(f, "INT_LITERAL: {}", integer),
+            TokenType::LitFloat(float) => write!(f, "FLOAT_LITERAL: {}", float)
         }
     }
 }
