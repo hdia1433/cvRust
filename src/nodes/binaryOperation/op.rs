@@ -5,7 +5,8 @@ pub enum Op
 {
     Assign,
     Add,
-    Sub
+    Sub,
+    Mul
 }
 
 impl Display for Op
@@ -16,7 +17,8 @@ impl Display for Op
         {
             Op::Assign => "=",
             Op::Add => "+",
-            Op::Sub => "-"
+            Op::Sub => "-",
+            Op::Mul => "*"
         })
     }
 }

@@ -161,7 +161,7 @@ impl Parser<'_>
 
     fn parseAdd(&mut self) -> Node
     {
-        let mut lhs = self.parsePrimary();
+        let mut lhs = self.parseMul();
 
         if let Some(next) = self.iter.peek() && (*next.getKind() == TokenType::OpPlus || *next.getKind() == TokenType::OpMinus)
         {
@@ -177,6 +177,21 @@ impl Parser<'_>
             };
 
             lhs = Node::BinaryOperation(BinaryOperation::new(lhs, op, rhs));
+        }
+
+        lhs
+    }
+
+    fn parseMul(&mut self) -> Node
+    {
+        let mut lhs = self.parsePrimary();
+
+        if let Some(next) = self.iter.peek() && *next.getKind() == TokenType::OpStar
+        {
+            self.iter.next().expect("Failed to get '*' token");
+
+            let rhs = self.parseExpression();
+            lhs = Node::BinaryOperation(BinaryOperation::new(lhs, Op::Mul, rhs));
         }
 
         lhs
