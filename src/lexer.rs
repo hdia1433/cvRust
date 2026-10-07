@@ -62,6 +62,7 @@ impl Lexer<'_>
                     '=' => TokenType::OpAssign,
                     '+' => TokenType::OpPlus,
                     '-' => TokenType::OpMinus,
+                    '*' => TokenType::OpStar,
                     '(' => TokenType::PuncOpenParen,
                     ')' => TokenType::PuncCloseParen,
                     '{' => TokenType::PuncOpenBrace,
