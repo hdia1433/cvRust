@@ -137,6 +137,7 @@ impl<'a> IRGenerator<'a>
             {
                 Op::Add => Some(BasicValueEnum::IntValue(self.builder.build_int_add(lhs, rhs, "result").expect("Failed to build add instruction"))),
                 Op::Sub => Some(BasicValueEnum::IntValue(self.builder.build_int_sub(lhs, rhs, "Result").expect("Failed to build sub instruction"))),
+                Op::Mul => Some(BasicValueEnum::IntValue(self.builder.build_int_mul(lhs, rhs, "result").expect("Failed to build mul instruction"))),
                 _ => unreachable!()
             }
         }
