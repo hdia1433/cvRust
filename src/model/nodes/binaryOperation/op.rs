@@ -6,7 +6,8 @@ pub enum Op
     Assign,
     Add,
     Sub,
-    Mul
+    Mul,
+    Div
 }
 
 impl Display for Op
@@ -18,7 +19,8 @@ impl Display for Op
             Op::Assign => "=",
             Op::Add => "+",
             Op::Sub => "-",
-            Op::Mul => "*"
+            Op::Mul => "*",
+            Op::Div => "/"
         })
     }
 }

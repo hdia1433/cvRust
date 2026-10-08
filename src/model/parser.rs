@@ -186,12 +186,20 @@ impl Parser<'_>
     {
         let mut lhs = self.parsePrimary();
 
-        if let Some(next) = self.iter.peek() && *next.getKind() == TokenType::OpStar
+        if let Some(next) = self.iter.peek() && (*next.getKind() == TokenType::OpStar || *next.getKind() == TokenType::OpSlash)
         {
-            self.iter.next().expect("Failed to get '*' token");
+            let tok: &Token = self.iter.next().expect("Failed to get '*' or '/' token");
 
-            let rhs = self.parseExpression();
-            lhs = Node::BinaryOperation(BinaryOperation::new(lhs, Op::Mul, rhs));
+            let rhs: Node = self.parseExpression();
+
+            let op: Op = match tok.getKind()
+            {
+                TokenType::OpStar => Op::Mul,
+                TokenType::OpSlash => Op::Div,
+                _ => unreachable!()
+            };
+
+            lhs = Node::BinaryOperation(BinaryOperation::new(lhs, op, rhs));
         }
 
         lhs

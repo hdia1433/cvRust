@@ -68,7 +68,7 @@ impl Display for BinaryOperation
         writeln!(f, "Op: {}", self.op)?;
         writeln!(f, "Right Node: {}", self.rhs)?;
         writeln!(f, "}}")?;
-
+        
         Ok(())
     }
 }

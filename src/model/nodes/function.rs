@@ -1,4 +1,4 @@
-use crate::token::TokenType;
+use crate::model::token::TokenType;
 use crate::Type;
 use super::Node;
 use std::fmt::Display;

@@ -1,4 +1,4 @@
-use crate::{Type, token::TokenType};
+use crate::model::{Type, token::TokenType};
 use std::fmt::Display;
 
 #[derive(Clone, Debug)]
