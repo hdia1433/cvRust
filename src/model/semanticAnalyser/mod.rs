@@ -1,4 +1,4 @@
-use crate::model::{Type, nodes::{binaryOperation::{BinaryOperation}, Function, GlobalScope, Node, VariableAccess, VariableDeclaration}};
+use crate::model::{Type, nodes::{binaryOperation::{BinaryOperation, Op}, Function, GlobalScope, Node, VariableAccess, VariableDeclaration}};
 
 mod semanticScope;
 
@@ -65,7 +65,11 @@ impl SemanticAnalyser
 
         if binaryOp.getLhs().getType() != binaryOp.getRhs().getType()
         {
-            binaryOp.convertRhs(binaryOp.getLhs().getType());
+            match (binaryOp.getLhs().getType(), binaryOp.getOp(), binaryOp.getRhs().getType())
+            {
+                (Type::Int, op, Type::Float) if *op != Op::Assign => binaryOp.convertLhs(Type::Float),
+                _ => binaryOp.convertRhs(binaryOp.getLhs().getType())
+            }
         }
     }
 

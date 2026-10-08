@@ -143,7 +143,7 @@ impl<'a> IRGenerator<'a>
                         Op::Add => self.builder.build_int_add(lhs, rhs, "result"),
                         Op::Sub => self.builder.build_int_sub(lhs, rhs, "Result"),
                         Op::Mul => self.builder.build_int_mul(lhs, rhs, "result"),
-                        Op::Div => todo!(),
+                        Op::Div => self.builder.build_int_signed_div(lhs, rhs, "result"),
                         Op::Assign => unreachable!()
                     }.expect("Failed to build binary operation instruction"))
                 },
@@ -159,7 +159,7 @@ impl<'a> IRGenerator<'a>
                         Op::Add => self.builder.build_float_add(lhs, rhs, "result"),
                         Op::Sub => self.builder.build_float_sub(lhs, rhs, "result"),
                         Op::Mul => self.builder.build_float_mul(lhs, rhs, "result"),
-                        Op::Div => todo!(),
+                        Op::Div => self.builder.build_float_div(lhs, rhs, "result"),
                         Op::Assign => unreachable!()
                     }.expect("Failed to build binary op instruction"))
                 },

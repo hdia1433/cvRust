@@ -30,6 +30,13 @@ impl BinaryOperation
         &self.rhs
     }
 
+    pub fn convertLhs(&mut self, toType: Type)
+    {
+        let lhs = std::mem::take(&mut self.lhs);
+
+        self.lhs = Box::new(Node::Conversion(Conversion::newFromBox(lhs, toType)));
+    }
+
     pub fn convertRhs(&mut self, toType: Type)
     {
         let rhs = std::mem::take(&mut self.rhs);
