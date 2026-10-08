@@ -1,4 +1,4 @@
-use crate::token::{Location, Token, TokenType};
+use crate::model::token::{Location, Token, TokenType};
 use std::{iter::Peekable, str::Chars, fs::File, io::{Write, Error}};
 
 pub struct Lexer<'a>
@@ -62,32 +62,29 @@ impl Lexer<'_>
                     }
                 }
 
-                let tok:Token = match dotNum
+                let tok:Token = match buffer.chars().last().expect("Failed to get last character")
                 {
-                    0 =>
+                    'f' => 
                     {
-                        if buffer.chars().last().expect("Failed to get last character of buffer") == 'f'
-                        {
-                            buffer.pop();
-                            let float:f32 = buffer.parse().expect("Failed to convert buffer to f32");
-                            Token::new(TokenType::LitFloat(float), beginLoc.clone())
-                        }
-                        else 
+                        buffer.pop();
+                        let float:f32 = buffer.parse().expect("Failed to convert buffer to f32");
+                        Token::new(TokenType::LitFloat(float), beginLoc.clone())
+                    }
+                    _ => match dotNum
+                    {
+                        0 =>
                         {
                             let integer: i32 = buffer.parse().expect("Failed to convert buffer to i32");
                             Token::new(TokenType::LitInteger(integer), beginLoc.clone())
-                        }
-                        
-                    },
-                    1 =>
-                    {
-                        let float:f32 = buffer.parse().expect("Failed to convert buffer to f32");
-                        Token::new(TokenType::LitFloat(float), beginLoc.clone())
-                    },
-                    _ => panic!("A floating point value can only contain 1 '.'")
+                        },
+                        1 =>
+                        {
+                            let float:f32 = buffer.parse().expect("Failed to convert buffer to f32");
+                            Token::new(TokenType::LitFloat(float), beginLoc.clone())
+                        },
+                        _ => panic!("A floating point value can only contain 1 '.'")
+                    }
                 };
-
-                
 
                 self.tokens.push(tok);
             }

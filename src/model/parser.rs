@@ -1,5 +1,5 @@
 use super::{token::{Token, TokenType}};
-use crate::nodes::{BinaryOperation, Function, GlobalScope, Literal, Node, VariableAccess, VariableDeclaration, binaryOperation::Op, literal::LiteralType};
+use crate::model::nodes::{BinaryOperation, Function, GlobalScope, Literal, Node, VariableAccess, VariableDeclaration, binaryOperation::Op, literal::LiteralType};
 use std::{iter::Peekable, slice::Iter, io::{Result, Write}, fs::File};
 
 

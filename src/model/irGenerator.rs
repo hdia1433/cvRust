@@ -1,4 +1,4 @@
-use crate::{Type, nodes::{Function, GlobalScope, Node, VariableDeclaration, VariableAccess, binaryOperation::{BinaryOperation, Op}, Conversion}};
+use crate::model::{Type, nodes::{Function, GlobalScope, Node, VariableDeclaration, VariableAccess, binaryOperation::{BinaryOperation, Op}, Conversion}};
 use inkwell::{builder::Builder, context::Context, module::Module, values::{BasicValueEnum, FunctionValue, PointerValue}};
 use std::collections::HashMap;
 
