@@ -3,6 +3,7 @@ pub use function::Function;
 pub use variableDeclaration::VariableDeclaration;
 pub use variableAccess::VariableAccess;
 pub use binaryOperation::BinaryOperation;
+pub use conversion::Conversion;
 pub use literal::Literal;
 use crate::Type;
 
@@ -11,16 +12,21 @@ mod function;
 mod variableDeclaration;
 mod variableAccess;
 pub mod binaryOperation;
+mod conversion;
 pub mod literal;
 
 use std::fmt::Display;
 
+#[derive(Default, Debug)]
 pub enum Node
 {
     VariableDeclaration(VariableDeclaration),
     VariableAccess(VariableAccess),
     BinaryOperation(BinaryOperation),
-    Literal(Literal)
+    Conversion(Conversion),
+    Literal(Literal),
+    #[default]
+    Error
 }
 
 impl Node
@@ -32,7 +38,9 @@ impl Node
             Node::VariableDeclaration(varDecl) => varDecl.getVarType().clone(),
             Node::VariableAccess(varAccess) => varAccess.getVarType().clone(),
             Node::BinaryOperation(binaryOp) => binaryOp.getType(),
+            Node::Conversion(conversion) => conversion.getType(),
             Node::Literal(literal) => literal.getType(),
+            Node::Error => panic!("Cannot get the type of an error node")
         }
     }
 }
@@ -46,7 +54,9 @@ impl Display for Node
             Node::VariableDeclaration(varDecl) => writeln!(f, "{}", varDecl),
             Node::VariableAccess(varAccess) => writeln!(f, "{}", varAccess),
             Node::BinaryOperation(binaryOp) => writeln!(f, "{}", binaryOp),
+            Node::Conversion(conversion) => write!(f, "{}", conversion),
             Node::Literal(literal) => writeln!(f, "{}", literal),
+            Node::Error => write!(f, "error")
         }
     }
 }

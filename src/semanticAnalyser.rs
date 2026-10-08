@@ -1,4 +1,4 @@
-use crate::{Type, nodes::{BinaryOperation, Function, GlobalScope, Node, VariableAccess, VariableDeclaration}};
+use crate::{Type, nodes::{binaryOperation::{BinaryOperation}, Function, GlobalScope, Node, VariableAccess, VariableDeclaration}};
 
 mod semanticScope;
 
@@ -65,7 +65,7 @@ impl SemanticAnalyser
 
         if binaryOp.getLhs().getType() != binaryOp.getRhs().getType()
         {
-            panic!("Binary Operation type mismatch");
+            binaryOp.convertRhs(binaryOp.getLhs().getType());
         }
     }
 
@@ -76,7 +76,9 @@ impl SemanticAnalyser
             Node::VariableDeclaration(varDecl) => self.analyseVarDecl(varDecl),
             Node::VariableAccess(varAccess) => self.analyseVarAccess(varAccess),
             Node::BinaryOperation(binaryOp) => self.analyseBinaryOp(binaryOp),
+            Node::Conversion(_) => (),
             Node::Literal(_) => (),
+            Node::Error => panic!("Error node found")
         }
     }
 

@@ -47,7 +47,7 @@ impl Lexer<'_>
             else if ch.is_numeric()
             {
                 let mut dotNum:i32 = 0;
-                while let Some(next) = self.iter.peek() && (next.is_numeric() || *next == '.')
+                while let Some(next) = self.iter.peek() && (next.is_numeric() || *next == '.' || *next == 'f')
                 {
                     ch = self.next().expect("Next character didn't exist.");
                     if ch == '.'
@@ -55,14 +55,29 @@ impl Lexer<'_>
                         dotNum += 1;
                     }
                     buffer.push(ch);
+
+                    if ch == 'f'
+                    {
+                        break;
+                    }
                 }
 
                 let tok:Token = match dotNum
                 {
                     0 =>
                     {
-                        let integer: i32 = buffer.parse().expect("Failed to convert buffer to i32");
-                        Token::new(TokenType::LitInteger(integer), beginLoc.clone())
+                        if buffer.chars().last().expect("Failed to get last character of buffer") == 'f'
+                        {
+                            buffer.pop();
+                            let float:f32 = buffer.parse().expect("Failed to convert buffer to f32");
+                            Token::new(TokenType::LitFloat(float), beginLoc.clone())
+                        }
+                        else 
+                        {
+                            let integer: i32 = buffer.parse().expect("Failed to convert buffer to i32");
+                            Token::new(TokenType::LitInteger(integer), beginLoc.clone())
+                        }
+                        
                     },
                     1 =>
                     {
@@ -92,40 +107,40 @@ impl Lexer<'_>
                     ' ' => continue,
                     '/' => 
                     {
-                        let Some(next) = self.iter.peek() else
+                        if let Some(next) = self.iter.peek()
                         {
-                            continue;
-                        };
-                        if *next == '/'
-                        {
-                            while let Some(ch) = self.next() && ch != '\n'
+                            if *next == '/'
                             {
-                                   
-                            }
-                            continue;
-                        }
-                        else if *next == '*'
-                        {
-                            loop
-                            {
-                                let Some(ch) = self.next() else
+                                while let Some(ch) = self.next() && ch != '\n'
                                 {
-                                    panic!("An error has occurred at the end of the file. A '*/' is needed to end a multiline comment");
-                                };
-                                let Some(next) = self.iter.peek() else
-                                {
-                                    panic!("An error has occurred at the end of the file. A '*/' is needed to end a multiline comment");
-                                };
-
-                                if ch == '*' && *next == '/'
-                                {
-                                    self.next();
-                                    break;
+                                    
                                 }
+                                continue;
                             }
-                            continue;
-                        }
-                        continue;
+                            else if *next == '*'
+                            {
+                                loop
+                                {
+                                    let Some(ch) = self.next() else
+                                    {
+                                        panic!("An error has occurred at the end of the file. A '*/' is needed to end a multiline comment");
+                                    };
+                                    let Some(next) = self.iter.peek() else
+                                    {
+                                        panic!("An error has occurred at the end of the file. A '*/' is needed to end a multiline comment");
+                                    };
+
+                                    if ch == '*' && *next == '/'
+                                    {
+                                        self.next();
+                                        break;
+                                    }
+                                }
+                                continue;
+                            }
+                        };
+                        
+                        TokenType::OpSlash
                     },
                     '\n' => 
                     {

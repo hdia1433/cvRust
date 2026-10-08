@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Debug)]
 pub enum Op
 {
     Assign,

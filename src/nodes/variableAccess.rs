@@ -1,6 +1,7 @@
 use crate::Type;
 use std::fmt::Display;
 
+#[derive(Debug)]
 pub struct VariableAccess
 {
     name: String,

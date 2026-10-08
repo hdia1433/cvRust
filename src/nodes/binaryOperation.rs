@@ -1,10 +1,11 @@
 mod op;
 
-use super::Node;
+use super::{Node, Conversion};
 pub use op::Op;
 use crate::Type;
 use std::fmt::Display;
 
+#[derive(Debug)]
 pub struct BinaryOperation
 {
     lhs: Box<Node>,
@@ -27,6 +28,13 @@ impl BinaryOperation
     pub fn getRhs(&self) -> &Box<Node>
     {
         &self.rhs
+    }
+
+    pub fn convertRhs(&mut self, toType: Type)
+    {
+        let rhs = std::mem::take(&mut self.rhs);
+
+        self.rhs = Box::new(Node::Conversion(Conversion::newFromBox(rhs, toType)));
     }
 
     pub fn getLhsMut(&mut self) -> &mut Box<Node>

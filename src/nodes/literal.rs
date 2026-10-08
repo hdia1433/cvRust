@@ -2,6 +2,7 @@ use std::fmt::Display;
 use crate::Type;
 use inkwell::{values::BasicValueEnum, context::Context};
 
+#[derive(Debug)]
 pub enum LiteralType
 {
     Integer(i32),
@@ -41,6 +42,7 @@ impl Display for LiteralType
     }
 }
 
+#[derive(Debug)]
 pub struct Literal
 {
     value: LiteralType

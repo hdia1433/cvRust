@@ -1,7 +1,7 @@
 use std::fmt::Display;
 use inkwell::{context::Context, types::{BasicMetadataTypeEnum, FunctionType, BasicTypeEnum}};
 
-#[derive(PartialEq, Clone, Default)]
+#[derive(PartialEq, Clone, Default, Debug)]
 pub enum Type
 {
     Void,

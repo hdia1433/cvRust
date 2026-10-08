@@ -1,4 +1,4 @@
-use crate::{nodes::{Function, GlobalScope, Node, VariableDeclaration, VariableAccess, binaryOperation::{BinaryOperation, Op}}};
+use crate::{Type, nodes::{Function, GlobalScope, Node, VariableDeclaration, VariableAccess, binaryOperation::{BinaryOperation, Op}, Conversion}};
 use inkwell::{builder::Builder, context::Context, module::Module, values::{BasicValueEnum, FunctionValue, PointerValue}};
 use std::collections::HashMap;
 
@@ -90,7 +90,9 @@ impl<'a> IRGenerator<'a>
             Node::VariableDeclaration(varDecl) => self.translateVarDecl(varDecl),
             Node::VariableAccess(varAccess) => Some(self.translateVarAccess(varAccess)),
             Node::BinaryOperation(binaryOp) => self.translateBinaryOp(binaryOp),
-            Node::Literal(literal) => Some(literal.getValue().intoBasicValue(&self.context))
+            Node::Conversion(conversion) => self.translateConversion(conversion),
+            Node::Literal(literal) => Some(literal.getValue().intoBasicValue(&self.context)),
+            Node::Error => panic!("Error node found")
         }
     }
 
@@ -124,22 +126,69 @@ impl<'a> IRGenerator<'a>
         }
         else 
         {
-            let BasicValueEnum::IntValue(lhs) = self.translateNode(binaryOp.getLhs()).expect("LHS Wasn't a basic value") else
-            {
-                panic!("LHS Wasn't an int value")
-            };
-            let BasicValueEnum::IntValue(rhs) = self.translateNode(binaryOp.getRhs()).expect("RHS Wasn't a basic value") else
-            {
-                panic!("RHS wasn't an int value")
-            };
+            let lhs = self.translateNode(binaryOp.getLhs()).expect("LHS Wasn't a basic value");
+            let rhs = self.translateNode(binaryOp.getRhs()).expect("RHS wasn't a basic value");
 
-            match binaryOp.getOp()
+            Some(match lhs
             {
-                Op::Add => Some(BasicValueEnum::IntValue(self.builder.build_int_add(lhs, rhs, "result").expect("Failed to build add instruction"))),
-                Op::Sub => Some(BasicValueEnum::IntValue(self.builder.build_int_sub(lhs, rhs, "Result").expect("Failed to build sub instruction"))),
-                Op::Mul => Some(BasicValueEnum::IntValue(self.builder.build_int_mul(lhs, rhs, "result").expect("Failed to build mul instruction"))),
+                BasicValueEnum::IntValue(lhs) => 
+                {
+                    let BasicValueEnum::IntValue(rhs) = rhs else
+                    {
+                        panic!("RHS Wasn't an int value")
+                    };
+
+                    BasicValueEnum::IntValue(match binaryOp.getOp()
+                    {
+                        Op::Add => self.builder.build_int_add(lhs, rhs, "result"),
+                        Op::Sub => self.builder.build_int_sub(lhs, rhs, "Result"),
+                        Op::Mul => self.builder.build_int_mul(lhs, rhs, "result"),
+                        Op::Assign => unreachable!()
+                    }.expect("Failed to build binary operation instruction"))
+                },
+                BasicValueEnum::FloatValue(lhs) =>
+                {
+                    let BasicValueEnum::FloatValue(rhs) = rhs else
+                    {
+                        panic!("RHS Wasn't a float value")
+                    };
+
+                    BasicValueEnum::FloatValue(match binaryOp.getOp()
+                    {
+                        Op::Add => self.builder.build_float_add(lhs, rhs, "result"),
+                        Op::Sub => self.builder.build_float_sub(lhs, rhs, "result"),
+                        Op::Mul => self.builder.build_float_mul(lhs, rhs, "result"),
+                        Op::Assign => unreachable!()
+                    }.expect("Failed to build binary op instruction"))
+                },
                 _ => unreachable!()
-            }
+            })
+        }
+    }
+
+    fn translateConversion(&mut self, conversion: &Conversion) -> Option<BasicValueEnum<'a>>
+    {
+        match (conversion.getInitialType(), conversion.getType())
+        {
+            (Type::Int, Type::Float) =>
+            {
+                let BasicValueEnum::IntValue(integer) = self.translateNode(conversion.getNode()).expect("node wasn't a basic value") else
+                {
+                    panic!("Node wasn't an integer value")
+                };
+
+                Some(BasicValueEnum::FloatValue(self.builder.build_signed_int_to_float(integer, self.context.f32_type(), "conversion").expect("Failed to build casting instruction")))
+            },
+            (Type::Float, Type::Int) =>
+            {
+                let BasicValueEnum::FloatValue(float) = self.translateNode(conversion.getNode()).expect("Node wasn't a basic value")else
+                {
+                    panic!("Node wasn't a float value");
+                };
+
+                Some(BasicValueEnum::IntValue(self.builder.build_float_to_signed_int(float, self.context.i32_type(), "conversion").expect("Failed to build casting")))
+            },
+            _ => panic!("Invalid conversion")
         }
     }
 }
