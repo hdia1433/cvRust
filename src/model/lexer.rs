@@ -41,6 +41,9 @@ impl Lexer<'_>
                     "void" => TokenType::KwVoid,
                     "int" => TokenType::KwInt,
                     "float" => TokenType::KwFloat,
+                    "bool" => TokenType::KwBool,
+                    "true" => TokenType::KwTrue,
+                    "false" => TokenType::KwFalse,
                     _ => TokenType::Identifier(buffer.clone())
                 }, beginLoc.clone()));
             }
