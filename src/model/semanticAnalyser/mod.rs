@@ -1,4 +1,4 @@
-use crate::model::{Type, nodes::{Conversion, Function, GlobalScope, Node, VariableAccess, VariableDeclaration, binaryOperation::{BinaryOperation, Op}}};
+use crate::model::{Type, nodes::{Function, GlobalScope, Node, VariableAccess, VariableDeclaration, binaryOperation::{BinaryOperation, Op}}};
 
 mod semanticScope;
 
