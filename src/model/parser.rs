@@ -236,6 +236,8 @@ impl Parser<'_>
                 Node::Literal(Literal::new(LiteralType::Integer(*integer)))
             },
             TokenType::LitFloat(float) => Node::Literal(Literal::new(LiteralType::Float(*float))),
+            TokenType::KwTrue => Node::Literal(Literal::new(LiteralType::Bool(true))),
+            TokenType::KwFalse => Node::Literal(Literal::new(LiteralType::Bool(false))),
             TokenType::Identifier(ident) => Node::VariableAccess(VariableAccess::new(ident)),
             _ => unreachable!()
         }

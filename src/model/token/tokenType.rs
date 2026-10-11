@@ -28,7 +28,7 @@ impl TokenType
 {
     pub fn isType(&self) -> bool
     {
-        *self == Self::KwVoid || *self == Self::KwInt || *self == Self::KwFloat
+        *self == Self::KwVoid || *self == Self::KwInt || *self == Self::KwFloat || *self == Self::KwBool
     }
 }
 

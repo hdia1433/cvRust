@@ -18,6 +18,7 @@ impl VariableDeclaration
             {
                 TokenType::KwInt => Type::Int,
                 TokenType::KwFloat => Type::Float,
+                TokenType::KwBool => Type::Bool,
                 _ => panic!("A token type of a type required to create a new variable declaration")
             }, 
             name: name.to_owned()
