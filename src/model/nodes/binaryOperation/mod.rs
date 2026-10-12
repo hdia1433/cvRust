@@ -61,7 +61,11 @@ impl BinaryOperation
 
     pub fn getType(&self) -> Type
     {
-        self.lhs.getType()
+        match self.op
+        {
+            Op::Equals => Type::Bool,
+            _ => self.lhs.getType()
+        }
     }
 }
 

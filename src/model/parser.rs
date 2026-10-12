@@ -145,7 +145,7 @@ impl Parser<'_>
 
     fn parseVarAssign(&mut self) -> Node
     {
-        let mut lhs = self.parseAdd();
+        let mut lhs = self.parseEquality();
 
         if let Some(next) = self.iter.peek() && *next.getKind() == TokenType::OpAssign
         {
@@ -154,6 +154,21 @@ impl Parser<'_>
             let rhs = self.parseExpression();
 
             lhs = Node::BinaryOperation(BinaryOperation::new(lhs, Op::Assign, rhs))
+        }
+
+        lhs
+    }
+
+    fn parseEquality(&mut self) -> Node
+    {
+        let mut lhs = self.parseAdd();
+
+        if let Some(next) = self.iter.peek() && *next.getKind() == TokenType::OpEquals
+        {
+            self.iter.next().expect("Failed to get '==' token");
+
+            let rhs = self.parseExpression();
+            lhs = Node::BinaryOperation(BinaryOperation::new(lhs, Op::Equals, rhs));
         }
 
         lhs

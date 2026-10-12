@@ -144,7 +144,8 @@ impl<'a> IRGenerator<'a>
                         Op::Sub => self.builder.build_int_sub(lhs, rhs, "Result"),
                         Op::Mul => self.builder.build_int_mul(lhs, rhs, "result"),
                         Op::Div => self.builder.build_int_signed_div(lhs, rhs, "result"),
-                        Op::Assign => unreachable!()
+                        Op::Equals => todo!(),
+                        Op::Assign => unreachable!(),
                     }.expect("Failed to build binary operation instruction"))
                 },
                 BasicValueEnum::FloatValue(lhs) =>
@@ -160,6 +161,7 @@ impl<'a> IRGenerator<'a>
                         Op::Sub => self.builder.build_float_sub(lhs, rhs, "result"),
                         Op::Mul => self.builder.build_float_mul(lhs, rhs, "result"),
                         Op::Div => self.builder.build_float_div(lhs, rhs, "result"),
+                        Op::Equals => todo!(),
                         Op::Assign => unreachable!()
                     }.expect("Failed to build binary op instruction"))
                 },

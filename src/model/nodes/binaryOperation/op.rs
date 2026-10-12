@@ -7,7 +7,8 @@ pub enum Op
     Add,
     Sub,
     Mul,
-    Div
+    Div,
+    Equals
 }
 
 impl Display for Op
@@ -20,7 +21,8 @@ impl Display for Op
             Op::Add => "+",
             Op::Sub => "-",
             Op::Mul => "*",
-            Op::Div => "/"
+            Op::Div => "/",
+            Op::Equals => "=="
         })
     }
 }
