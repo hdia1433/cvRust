@@ -172,7 +172,7 @@ impl<'a> IRGenerator<'a>
 
     fn translateConversion(&mut self, conversion: &Conversion) -> Option<BasicValueEnum<'a>>
     {
-        match (dbg!(conversion.getInitialType()), dbg!(conversion.getType()))
+        match (conversion.getInitialType(), conversion.getType())
         {
             (Type::Int, Type::Float) =>
             {
