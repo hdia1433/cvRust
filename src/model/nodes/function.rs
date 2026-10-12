@@ -1,7 +1,8 @@
 use crate::model::token::TokenType;
 use crate::Type;
-use super::Node;
-use std::fmt::Display;
+use super::{Node, ToFile};
+use std::{fmt::Display, io::Write};
+use bitvec::prelude::BitVec;
 
 pub struct Function
 {
@@ -77,6 +78,27 @@ impl Display for Function
         }
 
         writeln!(f, "}}")?;
+
+        Ok(())
+    }
+}
+
+impl ToFile for Function
+{
+    fn toFile(&self, f: &mut std::fs::File, indents: &mut BitVec, last: bool) -> std::io::Result<()> 
+    {
+        let indent:String = Self::getIndent(indents, last);
+
+        write!(f, "{}Function({}, {})", indent, self.funcType, self.name)?;
+
+        let mut childIndents:BitVec = indents.clone();
+
+        childIndents.push(!last);
+
+        for (i,node) in self.body.iter().enumerate()
+        {
+            node.toFile(f, &mut childIndents, i == self.body.len() - 1)?;
+        }
 
         Ok(())
     }

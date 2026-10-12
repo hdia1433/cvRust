@@ -1,5 +1,6 @@
 use crate::model::{Type, token::TokenType};
-use std::fmt::Display;
+use std::{fmt::Display, io::Write};
+use super::ToFile;
 
 #[derive(Clone, Debug)]
 pub struct VariableDeclaration
@@ -47,5 +48,15 @@ impl Display for VariableDeclaration
         writeln!(f, "}}")?;
 
         Ok(())
+    }
+}
+
+impl ToFile for VariableDeclaration
+{
+    fn toFile(&self, f: &mut std::fs::File, indents: &mut bitvec::prelude::BitVec, last: bool) -> std::io::Result<()>
+    {
+        let indent:String = Self::getIndent(indents, last);
+
+        write!(f, "{}Variable Declaration({}, {})", indent, self.varType, self.name)
     }
 }

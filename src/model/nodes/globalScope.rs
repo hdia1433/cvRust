@@ -1,5 +1,6 @@
-use super::Function;
-use std::fmt::Display;
+use super::{Function, ToFile};
+use std::{fmt::Display, io::Write};
+use bitvec::prelude::BitVec;
 
 pub struct GlobalScope
 {
@@ -41,6 +42,27 @@ impl Display for GlobalScope
         }
 
         writeln!(f, "}}")?;
+
+        Ok(())
+    }
+}
+
+impl ToFile for GlobalScope
+{
+    fn toFile(&self, f: &mut std::fs::File, indents: &mut BitVec, last: bool) -> std::io::Result<()> 
+    {
+        let indent:String = Self::getIndent(indents, last);
+
+        write!(f, "{}Global Scope", indent)?;
+
+        let mut childIndents:BitVec = indents.clone();
+
+        childIndents.push(!last);
+
+        for (i, func) in self.functions.iter().enumerate()
+        {
+            func.toFile(f, &mut childIndents, i == self.functions.len() - 1)?;
+        }
 
         Ok(())
     }

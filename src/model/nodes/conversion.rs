@@ -1,6 +1,6 @@
 use crate::Type;
-use super::Node;
-use std::fmt::Display;
+use super::{Node, ToFile};
+use std::{fmt::Display, io::Write};
 
 #[derive(Debug)]
 pub struct Conversion
@@ -42,5 +42,21 @@ impl Display for Conversion
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result 
     {
         write!(f, "Convert {} to type {}", self.node, self.toType)
+    }
+}
+
+impl ToFile for Conversion
+{
+    fn toFile(&self, f: &mut std::fs::File, indents: &mut bitvec::prelude::BitVec, last: bool) -> std::io::Result<()>
+    {
+        let indent:String = Self::getIndent(indents, last);
+
+        write!(f, "{}Conversion(To: {})", indent, self.toType)?;
+
+        indents.push(!last);
+
+        self.node.toFile(f, indents, true)?;
+
+        Ok(())
     }
 }

@@ -37,12 +37,17 @@ fn main()
 
     if debug
     {
-        parser.toFile().expect("Parser failed to write to file.");
+        parser.toFile("ast.txt").expect("Parser failed to write to file.");
     }
 
     let mut semanticAnalyser = SemanticAnalyser::new();
 
     semanticAnalyser.analyse(parser.getAstMut());
+
+    if debug
+    {
+        parser.toFile("analysedAst.txt").expect("Parser failed to write to file.");
+    }
 
     let context = Context::create();
     let mut irGenerator = IRGenerator::new(&context);

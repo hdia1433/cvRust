@@ -60,8 +60,8 @@ impl SemanticAnalyser
 
     fn analyseBinaryOp(&mut self, binaryOp: &mut BinaryOperation)
     {
-        self.analyseNode(binaryOp.getLhsMut());
         self.analyseNode(binaryOp.getRhsMut());
+        self.analyseNode(binaryOp.getLhsMut());
 
         if binaryOp.getLhs().getType() != binaryOp.getRhs().getType()
         {

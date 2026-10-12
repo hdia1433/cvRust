@@ -7,6 +7,7 @@ pub use conversion::Conversion;
 pub use literal::Literal;
 use crate::Type;
 
+mod toFile;
 mod globalScope;
 mod function;
 mod variableDeclaration;
@@ -15,7 +16,9 @@ pub mod binaryOperation;
 mod conversion;
 pub mod literal;
 
-use std::fmt::Display;
+pub use toFile::ToFile;
+
+use std::{fmt::Display, io::Write};
 
 #[derive(Default, Debug)]
 pub enum Node
@@ -57,6 +60,27 @@ impl Display for Node
             Node::Conversion(conversion) => write!(f, "{}", conversion),
             Node::Literal(literal) => writeln!(f, "{}", literal),
             Node::Error => write!(f, "error")
+        }
+    }
+}
+
+impl ToFile for Node
+{
+    fn toFile(&self, f: &mut std::fs::File, indents: &mut bitvec::prelude::BitVec, last: bool) -> std::io::Result<()>
+    {
+        match self
+        {
+            Node::VariableDeclaration(varDecl) => varDecl.toFile(f, indents, last),
+            Node::VariableAccess(varAccess) => varAccess.toFile(f, indents, last),
+            Node::BinaryOperation(binOp) => binOp.toFile(f, indents, last),
+            Node::Conversion(conversion) => conversion.toFile(f, indents, last),
+            Node::Literal(literal) => literal.toFile(f, indents, last),
+            Node::Error => 
+            {
+                let indent:String = Self::getIndent(indents, last);
+
+                write!(f, "{}Error", indent)
+            },
         }
     }
 }

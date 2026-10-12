@@ -1,6 +1,7 @@
 use super::{token::{Token, TokenType}};
-use crate::model::nodes::{BinaryOperation, Function, GlobalScope, Literal, Node, VariableAccess, VariableDeclaration, binaryOperation::Op, literal::LiteralType};
+use crate::model::nodes::{BinaryOperation, Function, GlobalScope, Literal, Node, ToFile, VariableAccess, VariableDeclaration, binaryOperation::Op, literal::LiteralType};
 use std::{iter::Peekable, slice::Iter, io::{Result, Write}, fs::File};
+use bitvec::prelude::BitVec;
 
 
 pub struct Parser<'a>
@@ -88,11 +89,13 @@ impl Parser<'_>
         &mut self.ast
     }
 
-    pub fn toFile(&self) -> Result<()>
+    pub fn toFile(&self, path: &str) -> Result<()>
     {
-        let mut file = File::create("ast.txt")?;
+        let mut file = File::create(path)?;
 
-        write!(file, "{}", self.ast)?;
+        write!(file, "ast")?;
+
+        self.ast.toFile(&mut file, &mut BitVec::new(), true)?;
 
         Ok(())
     }

@@ -3,7 +3,9 @@ mod op;
 use super::{Node, Conversion};
 pub use op::Op;
 use crate::Type;
-use std::fmt::Display;
+use std::{fmt::Display, io::Write};
+use super::ToFile;
+use bitvec::prelude::BitVec;
 
 #[derive(Debug)]
 pub struct BinaryOperation
@@ -80,6 +82,26 @@ impl Display for BinaryOperation
         writeln!(f, "Right Node: {}", self.rhs)?;
         writeln!(f, "}}")?;
         
+        Ok(())
+    }
+}
+
+impl ToFile for BinaryOperation
+{
+    fn toFile(&self, f: &mut std::fs::File, indents: &mut BitVec, last: bool) -> std::io::Result<()>
+    {
+        let indent:String = Self::getIndent(indents, last);
+
+        write!(f, "{}Binary Operation", indent)?;
+
+        let mut childIndents:BitVec = indents.clone();
+
+        childIndents.push(!last);
+
+        self.lhs.toFile(f, &mut childIndents, false)?;
+        write!(f, "{}{}", Self::getIndent(&childIndents, false), self.op)?;
+        self.rhs.toFile(f, &mut childIndents, true)?;
+
         Ok(())
     }
 }
