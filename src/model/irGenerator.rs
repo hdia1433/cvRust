@@ -1,5 +1,5 @@
 use crate::model::{Type, nodes::{Function, GlobalScope, Node, VariableDeclaration, VariableAccess, binaryOperation::{BinaryOperation, Op}, Conversion}};
-use inkwell::{builder::Builder, context::Context, module::Module, values::{BasicValueEnum, FunctionValue, PointerValue}};
+use inkwell::{builder::Builder, context::Context, module::Module, values::{BasicValueEnum, FunctionValue, PointerValue}, IntPredicate, FloatPredicate};
 use std::collections::HashMap;
 
 
@@ -144,7 +144,7 @@ impl<'a> IRGenerator<'a>
                         Op::Sub => self.builder.build_int_sub(lhs, rhs, "Result"),
                         Op::Mul => self.builder.build_int_mul(lhs, rhs, "result"),
                         Op::Div => self.builder.build_int_signed_div(lhs, rhs, "result"),
-                        Op::Equals => todo!(),
+                        Op::Equals => self.builder.build_int_compare(IntPredicate::EQ, lhs, rhs, "result"),
                         Op::Assign => unreachable!(),
                     }.expect("Failed to build binary operation instruction"))
                 },
@@ -155,15 +155,15 @@ impl<'a> IRGenerator<'a>
                         panic!("RHS Wasn't a float value")
                     };
 
-                    BasicValueEnum::FloatValue(match binaryOp.getOp()
+                    match binaryOp.getOp()
                     {
-                        Op::Add => self.builder.build_float_add(lhs, rhs, "result"),
-                        Op::Sub => self.builder.build_float_sub(lhs, rhs, "result"),
-                        Op::Mul => self.builder.build_float_mul(lhs, rhs, "result"),
-                        Op::Div => self.builder.build_float_div(lhs, rhs, "result"),
-                        Op::Equals => todo!(),
+                        Op::Add => BasicValueEnum::FloatValue(self.builder.build_float_add(lhs, rhs, "result").expect("Failed to build add operation")),
+                        Op::Sub => BasicValueEnum::FloatValue(self.builder.build_float_sub(lhs, rhs, "result").expect("Failed to build sub operation")),
+                        Op::Mul => BasicValueEnum::FloatValue(self.builder.build_float_mul(lhs, rhs, "result").expect("Failed to build mul operation")),
+                        Op::Div => BasicValueEnum::FloatValue(self.builder.build_float_div(lhs, rhs, "result").expect("Failed to build dib operation")),
+                        Op::Equals => BasicValueEnum::IntValue(self.builder.build_float_compare(FloatPredicate::OEQ, lhs, rhs, "result").expect("Failed to build compare operation")),
                         Op::Assign => unreachable!()
-                    }.expect("Failed to build binary op instruction"))
+                    }
                 },
                 _ => unreachable!()
             })
@@ -172,7 +172,7 @@ impl<'a> IRGenerator<'a>
 
     fn translateConversion(&mut self, conversion: &Conversion) -> Option<BasicValueEnum<'a>>
     {
-        match (conversion.getInitialType(), conversion.getType())
+        match (dbg!(conversion.getInitialType()), dbg!(conversion.getType()))
         {
             (Type::Int, Type::Float) =>
             {
@@ -185,7 +185,7 @@ impl<'a> IRGenerator<'a>
             },
             (Type::Float, Type::Int) =>
             {
-                let BasicValueEnum::FloatValue(float) = self.translateNode(conversion.getNode()).expect("Node wasn't a basic value")else
+                let BasicValueEnum::FloatValue(float) = self.translateNode(conversion.getNode()).expect("Node wasn't a basic value") else
                 {
                     panic!("Node wasn't a float value");
                 };
