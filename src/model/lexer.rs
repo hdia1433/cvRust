@@ -93,9 +93,20 @@ impl Lexer<'_>
             }
             else 
             {
-                self.tokens.push(Token::new(match ch
+                let tok = Token::new(match ch
                 {
-                    '=' => TokenType::OpAssign,
+                    '=' => 
+                    {
+                        if let Some(next) = self.iter.peek() && *next == '='
+                        {
+                            self.next();
+                            TokenType::OpEquals
+                        }
+                        else
+                        {
+                            TokenType::OpAssign
+                        }
+                    },
                     '+' => TokenType::OpPlus,
                     '-' => TokenType::OpMinus,
                     '*' => TokenType::OpStar,
@@ -149,7 +160,9 @@ impl Lexer<'_>
                         continue;
                     },
                     _ => panic!("Unrecognised token at the line {} and the column {}", self.line, self.column)
-                }, beginLoc.clone()));
+                }, beginLoc.clone());
+
+                self.tokens.push(tok);
             }
         }
     }
