@@ -133,7 +133,7 @@ impl Parser<'_>
             panic!("An error has occurred at the end of the file. A semi-colon is needed to end a statement.");
         };
 
-        if *dbg!(tok.getKind()) != TokenType::PuncSemi
+        if *tok.getKind() != TokenType::PuncSemi
         {
             panic!("An error has occurred at {}. A semi-colon is needed to end a statement.", tok.getLoc());
         }

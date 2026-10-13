@@ -66,6 +66,7 @@ impl SemanticAnalyser
             match (binaryOp.getLhs().getType(), binaryOp.getOp(), binaryOp.getRhs().getType())
             {
                 (Type::Int, op, Type::Float) if *op != Op::Assign => binaryOp.convertLhs(Type::Float),
+                (type1, _, type2) if type1 == Type::Char || type2 == Type::Char => panic!("<char> cannot be implicitly converted into another type"),
                 _ => binaryOp.convertRhs(binaryOp.getLhs().getType())
             }
         }
