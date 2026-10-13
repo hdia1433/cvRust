@@ -7,8 +7,7 @@ pub enum TokenType
     KwInt,
     KwFloat,
     KwBool,
-    KwTrue,
-    KwFalse,
+    KwChar,
     OpAssign,
     OpPlus,
     OpMinus,
@@ -22,7 +21,9 @@ pub enum TokenType
     PuncSemi,
     Identifier(String),
     LitInteger(i32),
-    LitFloat(f32)
+    LitFloat(f32),
+    LitBool(bool),
+    LitChar(char)
 }
 
 impl TokenType
@@ -43,8 +44,7 @@ impl Display for TokenType
             TokenType::KwInt => write!(f, "KW: int"),
             TokenType::KwFloat => write!(f, "KW: float"),
             TokenType::KwBool => write!(f, "KW: bool"),
-            TokenType::KwTrue => write!(f, "KW: true"),
-            TokenType::KwFalse => write!(f, "KW: false"),
+            TokenType::KwChar => write!(f, "KW: char"),
             TokenType::OpAssign => write!(f, "OP_ASSIGN"),
             TokenType::OpPlus => write!(f, "OP_PLUS"),
             TokenType::OpMinus => write!(f, "OP_MINUS"),
@@ -58,7 +58,9 @@ impl Display for TokenType
             TokenType::PuncSemi => write!(f, "SEMI_COLON"),
             TokenType::Identifier(name) => write!(f, "IDENT: {}", name),
             TokenType::LitInteger(integer) => write!(f, "INT_LITERAL: {}", integer),
-            TokenType::LitFloat(float) => write!(f, "FLOAT_LITERAL: {}", float)
+            TokenType::LitFloat(float) => write!(f, "FLOAT_LITERAL: {}", float),
+            TokenType::LitBool(bool) => write!(f, "BOOL_LITERAL: {}", bool),
+            TokenType::LitChar(char) => write!(f, "CHAR_LITERAL: {}", char)
         }
     }
 }

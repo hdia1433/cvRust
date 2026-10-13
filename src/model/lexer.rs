@@ -42,8 +42,8 @@ impl Lexer<'_>
                     "int" => TokenType::KwInt,
                     "float" => TokenType::KwFloat,
                     "bool" => TokenType::KwBool,
-                    "true" => TokenType::KwTrue,
-                    "false" => TokenType::KwFalse,
+                    "true" => TokenType::LitBool(true),
+                    "false" => TokenType::LitBool(false),
                     _ => TokenType::Identifier(buffer.clone())
                 }, beginLoc.clone()));
             }
@@ -115,6 +115,25 @@ impl Lexer<'_>
                     '{' => TokenType::PuncOpenBrace,
                     '}' => TokenType::PuncCloseBrace,
                     ';' => TokenType::PuncSemi,
+                    '\'' =>
+                    {
+                        let Some(ch) = self.next() else
+                        {
+                            panic!("Character expected after \'\'\' operator")
+                        };
+
+                        let Some(next) = self.next() else
+                        {
+                            panic!("\' needed to enclose character literal")
+                        };
+
+                        if next != '\''
+                        {
+                            panic!("\' needed to enclose character literal")
+                        }
+
+                        TokenType::LitChar(ch)
+                    }
                     ' ' => continue,
                     '/' => 
                     {
