@@ -1,4 +1,4 @@
-use crate::model::token::{Location, Token, TokenType};
+use super::token::{Location, Token, TokenType};
 use std::{iter::Peekable, str::Chars, fs::File, io::{Write, Error}};
 
 pub struct Lexer<'a>

@@ -1,6 +1,5 @@
-use crate::model::token::TokenType;
-use crate::Type;
-use super::{Node, ToFile};
+use crate::lexer::token::TokenType;
+use super::{Node, ToFile, Type};
 use std::{fmt::Display, io::Write};
 use bitvec::prelude::BitVec;
 

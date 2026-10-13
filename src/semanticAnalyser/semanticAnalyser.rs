@@ -1,8 +1,6 @@
-use crate::model::{Type, nodes::{Function, GlobalScope, Node, VariableAccess, VariableDeclaration, binaryOperation::{BinaryOperation, Op}}};
+use crate::parser::ast::{Type, nodes::{Function, GlobalScope, Node, VariableAccess, VariableDeclaration, binaryOperation::{BinaryOperation, Op}}};
 
-mod semanticScope;
-
-pub use semanticScope::SemanticScope;
+pub use super::SemanticScope;
 
 pub struct SemanticAnalyser
 {

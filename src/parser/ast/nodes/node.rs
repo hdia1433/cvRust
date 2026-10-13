@@ -1,24 +1,6 @@
-pub use globalScope::GlobalScope;
-pub use function::Function;
-pub use variableDeclaration::VariableDeclaration;
-pub use variableAccess::VariableAccess;
-pub use binaryOperation::BinaryOperation;
-pub use conversion::Conversion;
-pub use literal::Literal;
-use crate::Type;
-
-mod toFile;
-mod globalScope;
-mod function;
-mod variableDeclaration;
-mod variableAccess;
-pub mod binaryOperation;
-mod conversion;
-pub mod literal;
-
-pub use toFile::ToFile;
-
 use std::{fmt::Display, io::Write};
+
+use super::{VariableDeclaration, VariableAccess, BinaryOperation, Conversion, Literal, Type, ToFile};
 
 #[derive(Default, Debug)]
 pub enum Node

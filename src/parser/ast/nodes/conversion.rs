@@ -1,5 +1,4 @@
-use crate::Type;
-use super::{Node, ToFile};
+use super::{Node, ToFile, Type};
 use std::{fmt::Display, io::Write};
 
 #[derive(Debug)]

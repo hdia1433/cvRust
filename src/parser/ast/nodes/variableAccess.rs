@@ -1,6 +1,5 @@
-use crate::Type;
 use std::{fmt::Display, io::Write};
-use super::ToFile;
+use super::{ToFile, Type};
 
 #[derive(Debug)]
 pub struct VariableAccess

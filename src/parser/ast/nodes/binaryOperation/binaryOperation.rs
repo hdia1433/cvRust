@@ -1,10 +1,7 @@
-mod op;
-
-use super::{Node, Conversion};
-pub use op::Op;
-use crate::Type;
+use crate::parser::ast::{nodes::{Node, Conversion}, Type};
+pub use super::Op;
 use std::{fmt::Display, io::Write};
-use super::ToFile;
+use crate::parser::ast::ToFile;
 use bitvec::prelude::BitVec;
 
 #[derive(Debug)]

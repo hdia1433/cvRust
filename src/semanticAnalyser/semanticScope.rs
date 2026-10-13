@@ -1,4 +1,4 @@
-use crate::model::nodes::VariableDeclaration;
+use crate::parser::ast::nodes::VariableDeclaration;
 
 pub struct SemanticScope
 {

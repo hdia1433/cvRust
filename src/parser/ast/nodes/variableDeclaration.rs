@@ -1,6 +1,6 @@
-use crate::model::{Type, token::TokenType};
+use crate::lexer::token::TokenType;
 use std::{fmt::Display, io::Write};
-use super::ToFile;
+use super::{ToFile, Type};
 
 #[derive(Clone, Debug)]
 pub struct VariableDeclaration

@@ -3,13 +3,16 @@
 use std::{env, fs, path::Path, process::Command};
 use inkwell::{context::Context, targets::{Target, InitializationConfig, TargetMachine, RelocMode, CodeModel, FileType}, OptimizationLevel, passes::PassBuilderOptions};
 
-pub mod model;
+pub mod lexer;
+pub mod parser;
+pub mod semanticAnalyser;
+pub mod irGenerator;
 
-use model::Lexer;
-use model::Parser;
-use model::SemanticAnalyser;
-use model::IRGenerator;
-use model::Type;
+use lexer::Lexer;
+use parser::Parser;
+use semanticAnalyser::SemanticAnalyser;
+
+pub use irGenerator::IRGenerator;
 
 fn main()
 {

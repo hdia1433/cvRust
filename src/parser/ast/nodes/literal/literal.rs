@@ -1,9 +1,6 @@
-mod literalType;
-
 use std::{fmt::Display, io::Write};
-use crate::Type;
-pub use literalType::LiteralType;
-use super::ToFile;
+use super::LiteralType;
+use crate::parser::ast::{ToFile, Type};
 
 
 #[derive(Debug)]

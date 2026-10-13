@@ -1,5 +1,5 @@
-use super::{token::{Token, TokenType}};
-use crate::model::nodes::{BinaryOperation, Function, GlobalScope, Literal, Node, ToFile, VariableAccess, VariableDeclaration, binaryOperation::Op, literal::LiteralType};
+use crate::lexer::token::{Token, TokenType};
+use crate::parser::ast::nodes::{BinaryOperation, Function, GlobalScope, Literal, Node, ToFile, VariableAccess, VariableDeclaration, binaryOperation::Op, literal::LiteralType};
 use std::{iter::Peekable, slice::Iter, io::{Result, Write}, fs::File};
 use bitvec::prelude::BitVec;
 
