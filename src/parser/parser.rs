@@ -119,7 +119,7 @@ impl Parser<'_>
             panic!("An error has occurred at {}. A function declaration must end in a '}}'.", tok.getLoc());
         }
 
-        function.setRoReturn(true);
+        function.setNoReturn(true);
 
         function
     }
@@ -133,7 +133,7 @@ impl Parser<'_>
             panic!("An error has occurred at the end of the file. A semi-colon is needed to end a statement.");
         };
 
-        if *tok.getKind() != TokenType::PuncSemi
+        if *dbg!(tok.getKind()) != TokenType::PuncSemi
         {
             panic!("An error has occurred at {}. A semi-colon is needed to end a statement.", tok.getLoc());
         }
@@ -255,6 +255,7 @@ impl Parser<'_>
             },
             TokenType::LitFloat(float) => Node::Literal(Literal::new(LiteralType::Float(*float))),
             TokenType::LitBool(boolean) => Node::Literal(Literal::new(LiteralType::Bool(*boolean))),
+            TokenType::LitChar(character) => Node::Literal(Literal::new(LiteralType::Char(*character))),
             TokenType::Identifier(ident) => Node::VariableAccess(VariableAccess::new(ident)),
             _ => unreachable!()
         }

@@ -54,7 +54,7 @@ impl Function
         &self.noReturn
     }
 
-    pub fn setRoReturn(&mut self, noReturn: bool)
+    pub fn setNoReturn(&mut self, noReturn: bool)
     {
         self.noReturn = noReturn;
     }

@@ -42,6 +42,7 @@ impl Lexer<'_>
                     "int" => TokenType::KwInt,
                     "float" => TokenType::KwFloat,
                     "bool" => TokenType::KwBool,
+                    "char" => TokenType::KwChar,
                     "true" => TokenType::LitBool(true),
                     "false" => TokenType::LitBool(false),
                     _ => TokenType::Identifier(buffer.clone())
