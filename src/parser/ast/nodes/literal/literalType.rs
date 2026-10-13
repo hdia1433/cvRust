@@ -45,7 +45,7 @@ impl Display for LiteralType
             LiteralType::Integer(integer) => write!(f, "Integer: {}", integer),
             LiteralType::Float(float) => write!(f, "Float: {}", float),
             LiteralType::Bool(boolean) => write!(f, "Boolean: {}", boolean),
-            LiteralType::Char(character) => write!(f, "Character: {}", character)
+            LiteralType::Char(character) => write!(f, "Character: \'{}\'", character)
         }
     }
 }
