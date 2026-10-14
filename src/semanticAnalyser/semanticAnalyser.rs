@@ -1,4 +1,4 @@
-use crate::parser::ast::{Type, nodes::{Function, GlobalScope, Node, VariableAccess, VariableDeclaration, binaryOperation::{BinaryOperation, Op}}};
+use crate::parser::ast::{Type, nodes::{Function, GlobalScope, Node, VariableAccess, VariableDeclaration, binaryOperation::{BinaryOperation, Op as BinOp}, unaryOperation::{UnaryOperation, Op as UnOp}}};
 
 pub use super::SemanticScope;
 
@@ -65,10 +65,21 @@ impl SemanticAnalyser
         {
             match (binaryOp.getLhs().getType(), binaryOp.getOp(), binaryOp.getRhs().getType())
             {
-                (Type::Int, op, Type::Float) if *op != Op::Assign => binaryOp.convertLhs(Type::Float),
+                (Type::Int, op, Type::Float) if *op != BinOp::Assign => binaryOp.convertLhs(Type::Float),
                 (type1, _, type2) if type1 == Type::Char || type2 == Type::Char => panic!("<char> cannot be implicitly converted into another type"),
                 _ => binaryOp.convertRhs(binaryOp.getLhs().getType())
             }
+        }
+    }
+
+    fn analyseUnaryOp(&mut self, unaryOp: &mut UnaryOperation)
+    {
+        self.analyseNode(unaryOp.getNodeMut());
+
+        match (unaryOp.getOp(), unaryOp.getNode().getType())
+        {
+            (UnOp::Dereference, nodeType) if !matches!(nodeType, Type::Pointer(_)) => panic!("Cannot dereference a node that isn't a pointer"),
+            _ => ()
         }
     }
 
@@ -81,7 +92,7 @@ impl SemanticAnalyser
             Node::BinaryOperation(binaryOp) => self.analyseBinaryOp(binaryOp),
             Node::Conversion(_) => (),
             Node::Literal(_) => (),
-            Node::UnaryOperation(_) => todo!(),
+            Node::UnaryOperation(unaryOp) => self.analyseUnaryOp(unaryOp),
             Node::Error => panic!("Error node found")
         }
     }

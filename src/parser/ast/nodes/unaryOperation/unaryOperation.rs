@@ -35,6 +35,21 @@ impl UnaryOperation
             }
         }
     }
+
+    pub fn getOp(&self) -> &Op
+    {
+        &self.op
+    }
+
+    pub fn getNode(&self) -> &Node
+    {
+        &self.node
+    }
+
+    pub fn getNodeMut(&mut self) -> &mut Node
+    {
+        &mut self.node
+    }
 }
 
 impl Display for UnaryOperation
