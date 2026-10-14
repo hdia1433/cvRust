@@ -1,4 +1,4 @@
-use crate::parser::ast::{Type, nodes::{Function, GlobalScope, Node, VariableDeclaration, VariableAccess, binaryOperation::{BinaryOperation, Op}, Conversion}};
+use crate::parser::ast::{Type, nodes::{Conversion, Function, GlobalScope, Node, VariableAccess, VariableDeclaration, binaryOperation::{BinaryOperation, Op as BinOp}, unaryOperation::{UnaryOperation, Op as UnOp}}};
 use inkwell::{builder::Builder, context::Context, module::Module, values::{BasicValueEnum, FunctionValue, PointerValue}, IntPredicate, FloatPredicate};
 use std::collections::HashMap;
 
@@ -92,14 +92,14 @@ impl<'a> IRGenerator<'a>
             Node::BinaryOperation(binaryOp) => self.translateBinaryOp(binaryOp),
             Node::Conversion(conversion) => self.translateConversion(conversion),
             Node::Literal(literal) => Some(literal.getValue().intoBasicValue(&self.context)),
-            Node::UnaryOperation(_) => todo!(),
+            Node::UnaryOperation(unaryOp) => self.translateUnaryOp(unaryOp),
             Node::Error => panic!("Error node found")
         }
     }
 
     fn translateBinaryOp(&mut self, binaryOp: &BinaryOperation) -> Option<BasicValueEnum<'a>>
     {
-        if *binaryOp.getOp() == Op::Assign
+        if *binaryOp.getOp() == BinOp::Assign
         {
             let var = match binaryOp.getLhs().as_ref()
             {
@@ -112,6 +112,15 @@ impl<'a> IRGenerator<'a>
                 Node::VariableAccess(varAccess) =>
                 {
                     *self.vars.get(varAccess.getName()).expect("Failed to find variable")
+                },
+                Node::UnaryOperation(unaryOp) =>
+                {
+                    let BasicValueEnum::PointerValue(ptr) = self.translateNode(unaryOp.getNode()).expect("Failed to translate unary operation") else
+                    {
+                        panic!("Can only assign to a dereference if assigning to a unary operator")
+                    };
+
+                    ptr
                 },
                 _ => panic!("Only a variable declaration can be assigned to.")
             };
@@ -141,12 +150,12 @@ impl<'a> IRGenerator<'a>
 
                     BasicValueEnum::IntValue(match binaryOp.getOp()
                     {
-                        Op::Add => self.builder.build_int_add(lhs, rhs, "result"),
-                        Op::Sub => self.builder.build_int_sub(lhs, rhs, "Result"),
-                        Op::Mul => self.builder.build_int_mul(lhs, rhs, "result"),
-                        Op::Div => self.builder.build_int_signed_div(lhs, rhs, "result"),
-                        Op::Equals => self.builder.build_int_compare(IntPredicate::EQ, lhs, rhs, "result"),
-                        Op::Assign => unreachable!(),
+                        BinOp::Add => self.builder.build_int_add(lhs, rhs, "result"),
+                        BinOp::Sub => self.builder.build_int_sub(lhs, rhs, "Result"),
+                        BinOp::Mul => self.builder.build_int_mul(lhs, rhs, "result"),
+                        BinOp::Div => self.builder.build_int_signed_div(lhs, rhs, "result"),
+                        BinOp::Equals => self.builder.build_int_compare(IntPredicate::EQ, lhs, rhs, "result"),
+                        BinOp::Assign => unreachable!(),
                     }.expect("Failed to build binary operation instruction"))
                 },
                 BasicValueEnum::FloatValue(lhs) =>
@@ -158,16 +167,48 @@ impl<'a> IRGenerator<'a>
 
                     match binaryOp.getOp()
                     {
-                        Op::Add => BasicValueEnum::FloatValue(self.builder.build_float_add(lhs, rhs, "result").expect("Failed to build add operation")),
-                        Op::Sub => BasicValueEnum::FloatValue(self.builder.build_float_sub(lhs, rhs, "result").expect("Failed to build sub operation")),
-                        Op::Mul => BasicValueEnum::FloatValue(self.builder.build_float_mul(lhs, rhs, "result").expect("Failed to build mul operation")),
-                        Op::Div => BasicValueEnum::FloatValue(self.builder.build_float_div(lhs, rhs, "result").expect("Failed to build dib operation")),
-                        Op::Equals => BasicValueEnum::IntValue(self.builder.build_float_compare(FloatPredicate::OEQ, lhs, rhs, "result").expect("Failed to build compare operation")),
-                        Op::Assign => unreachable!()
+                        BinOp::Add => BasicValueEnum::FloatValue(self.builder.build_float_add(lhs, rhs, "result").expect("Failed to build add operation")),
+                        BinOp::Sub => BasicValueEnum::FloatValue(self.builder.build_float_sub(lhs, rhs, "result").expect("Failed to build sub operation")),
+                        BinOp::Mul => BasicValueEnum::FloatValue(self.builder.build_float_mul(lhs, rhs, "result").expect("Failed to build mul operation")),
+                        BinOp::Div => BasicValueEnum::FloatValue(self.builder.build_float_div(lhs, rhs, "result").expect("Failed to build dib operation")),
+                        BinOp::Equals => BasicValueEnum::IntValue(self.builder.build_float_compare(FloatPredicate::OEQ, lhs, rhs, "result").expect("Failed to build compare operation")),
+                        BinOp::Assign => unreachable!()
                     }
                 },
                 _ => unreachable!()
             })
+        }
+    }
+
+    fn translateUnaryOp(&mut self, unaryOp: &UnaryOperation) -> Option<BasicValueEnum<'a>>
+    {
+        match unaryOp.getOp()
+        {
+            UnOp::AddressOf => 
+            {
+                let Node::VariableAccess(varAccess) = unaryOp.getNode() else
+                {
+                    panic!("Cannot get the address of a node that isn't a variable access")
+                };
+
+                Some(BasicValueEnum::PointerValue(*self.vars.get(varAccess.getName()).expect("Failed to get variable")))
+            },
+            UnOp::Dereference => 
+            {
+                let value = self.translateNode(unaryOp.getNode()).expect("Failed to get value from node");
+
+                let BasicValueEnum::PointerValue(ptr) = value else
+                {
+                    panic!("Can only dereference pointer values")
+                };
+
+                let Type::Pointer(subType) = unaryOp.getNode().getType() else
+                {
+                    panic!("Can only deference a value of pointer type");
+                };
+
+                Some(self.builder.build_load(subType.varType(&self.context), ptr, "deref").expect("Failed to build load instruction"))
+            }
         }
     }
 

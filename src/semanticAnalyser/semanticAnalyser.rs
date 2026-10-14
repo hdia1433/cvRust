@@ -81,6 +81,8 @@ impl SemanticAnalyser
             (UnOp::Dereference, nodeType) if !matches!(nodeType, Type::Pointer(_)) => panic!("Cannot dereference a node that isn't a pointer"),
             _ => ()
         }
+
+        
     }
 
     fn analyseNode(&mut self, node: &mut Node)
