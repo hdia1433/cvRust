@@ -230,7 +230,7 @@ impl Parser<'_>
         {
             let tok: &Token = self.iter.next().expect("Failed to get '&' token");
 
-            let node:Node = self.parseExpression();
+            let node:Node = self.parsePrimary();
 
             let op: OpUn = match *tok.getKind()
             {
