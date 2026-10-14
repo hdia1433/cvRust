@@ -81,6 +81,7 @@ impl SemanticAnalyser
             Node::BinaryOperation(binaryOp) => self.analyseBinaryOp(binaryOp),
             Node::Conversion(_) => (),
             Node::Literal(_) => (),
+            Node::AddressOf(_) => todo!(),
             Node::Error => panic!("Error node found")
         }
     }

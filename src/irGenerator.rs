@@ -92,6 +92,7 @@ impl<'a> IRGenerator<'a>
             Node::BinaryOperation(binaryOp) => self.translateBinaryOp(binaryOp),
             Node::Conversion(conversion) => self.translateConversion(conversion),
             Node::Literal(literal) => Some(literal.getValue().intoBasicValue(&self.context)),
+            Node::AddressOf(_) => todo!(),
             Node::Error => panic!("Error node found")
         }
     }

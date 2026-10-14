@@ -29,6 +29,11 @@ impl VariableAccess
     {
         self.varType = varType;
     }
+
+    pub fn getType(&self) -> Type
+    {
+        self.varType.clone()
+    }
 }
 
 impl Display for VariableAccess

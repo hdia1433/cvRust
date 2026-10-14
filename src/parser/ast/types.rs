@@ -1,5 +1,5 @@
 use std::fmt::Display;
-use inkwell::{context::Context, types::{BasicMetadataTypeEnum, FunctionType, BasicTypeEnum}};
+use inkwell::{context::Context, types::{BasicMetadataTypeEnum, FunctionType, BasicTypeEnum}, AddressSpace};
 
 #[derive(PartialEq, Clone, Default, Debug)]
 pub enum Type
@@ -9,6 +9,7 @@ pub enum Type
     Float,
     Bool,
     Char,
+    Pointer(Box<Type>),
     #[default]
     Error
 }
@@ -24,6 +25,7 @@ impl Type
             Type::Float => context.f32_type().fn_type(args, isVarArgs),
             Type::Bool => context.bool_type().fn_type(args, isVarArgs),
             Type::Char => context.i8_type().fn_type(args, isVarArgs),
+            Type::Pointer(_) => context.ptr_type(AddressSpace::default()).fn_type(args, isVarArgs),
             Type::Error => panic!("Cannot convert Type::Error into a function type")
         }
     }
@@ -36,6 +38,7 @@ impl Type
             Type::Float => context.f32_type().into(),
             Type::Bool => context.bool_type().into(),
             Type::Char => context.i8_type().into(),
+            Type::Pointer(_) => context.ptr_type(AddressSpace::default()).into(),
             Type::Void => panic!("Variables cannot be of the type <void>"),
             Type::Error => panic!("Type::Error couldn't be converted into variable type")
         }
@@ -49,12 +52,13 @@ impl Display for Type
         write!(f, "{}",
         match self
         {
-            Type::Int => "<int>",
-            Type::Float => "<float>",
-            Type::Void => "<void>",
-            Type::Bool => "<bool>",
-            Type::Char => "<char>",
-            Type::Error => "<Error>"
+            Type::Int => "<int>".to_string(),
+            Type::Float => "<float>".to_string(),
+            Type::Void => "<void>".to_string(),
+            Type::Bool => "<bool>".to_string(),
+            Type::Char => "<char>".to_string(),
+            Type::Pointer(ptr) => format!("<{}*>", ptr),
+            Type::Error => "<Error>".to_string()
         })?;
 
         Ok(())
