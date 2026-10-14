@@ -1,4 +1,5 @@
 use std::fmt::Display;
+use crate::lexer::token::TokenType;
 use inkwell::{context::Context, types::{BasicMetadataTypeEnum, FunctionType, BasicTypeEnum}, AddressSpace};
 
 #[derive(PartialEq, Clone, Default, Debug)]
@@ -16,6 +17,19 @@ pub enum Type
 
 impl Type
 {
+    pub fn fromToken(tok: TokenType) -> Self
+    {
+        match tok
+        {
+            TokenType::KwBool => Self::Bool,
+            TokenType::KwChar => Self::Char,
+            TokenType::KwFloat => Self::Float,
+            TokenType::KwInt => Self::Int,
+            TokenType::KwVoid => Self::Void,
+            _ => panic!("A token type for a type was needed")
+        }
+    }
+
     pub fn fnType<'a>(&self, context: &'a Context, args: &[BasicMetadataTypeEnum<'a>], isVarArgs: bool) -> FunctionType<'a>
     {
         match self

@@ -1,4 +1,3 @@
-use crate::lexer::token::TokenType;
 use std::{fmt::Display, io::Write};
 use super::{ToFile, Type};
 
@@ -11,20 +10,9 @@ pub struct VariableDeclaration
 
 impl VariableDeclaration
 {
-    pub fn new(varType: TokenType, name: &str) -> Self
+    pub fn new(varType: Type, name: &str) -> Self
     {
-        Self 
-        {
-            varType: match varType
-            {
-                TokenType::KwInt => Type::Int,
-                TokenType::KwFloat => Type::Float,
-                TokenType::KwBool => Type::Bool,
-                TokenType::KwChar => Type::Char,
-                _ => panic!("A token type of a type required to create a new variable declaration")
-            }, 
-            name: name.to_owned()
-        }
+        Self {varType, name: name.to_owned()}
     }
 
     pub fn getVarType(&self) -> &Type

@@ -14,9 +14,9 @@ mod variableAccess;
 pub mod binaryOperation;
 mod conversion;
 pub mod literal;
-mod addressOf;
+pub mod unaryOperation;
 
-pub use addressOf::AddressOf;
+pub use unaryOperation::UnaryOperation;
 
 pub use node::Node;
 

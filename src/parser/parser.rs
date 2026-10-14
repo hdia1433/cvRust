@@ -1,5 +1,6 @@
 use crate::lexer::token::{Token, TokenType};
-use crate::parser::ast::nodes::{BinaryOperation, Function, GlobalScope, Literal, Node, ToFile, VariableAccess, VariableDeclaration, binaryOperation::Op, literal::LiteralType};
+use crate::parser::ast::Type;
+use crate::parser::ast::nodes::{BinaryOperation, Function, GlobalScope, Literal, Node, ToFile, VariableAccess, VariableDeclaration, binaryOperation::Op as OpBin, unaryOperation::{UnaryOperation, Op as OpUn}, literal::LiteralType};
 use std::{iter::Peekable, slice::Iter, io::{Result, Write}, fs::File};
 use bitvec::prelude::BitVec;
 
@@ -156,7 +157,7 @@ impl Parser<'_>
 
             let rhs = self.parseExpression();
 
-            lhs = Node::BinaryOperation(BinaryOperation::new(lhs, Op::Assign, rhs))
+            lhs = Node::BinaryOperation(BinaryOperation::new(lhs, OpBin::Assign, rhs))
         }
 
         lhs
@@ -171,7 +172,7 @@ impl Parser<'_>
             self.iter.next().expect("Failed to get '==' token");
 
             let rhs = self.parseExpression();
-            lhs = Node::BinaryOperation(BinaryOperation::new(lhs, Op::Equals, rhs));
+            lhs = Node::BinaryOperation(BinaryOperation::new(lhs, OpBin::Equals, rhs));
         }
 
         lhs
@@ -189,8 +190,8 @@ impl Parser<'_>
 
             let op = match tok.getKind()
             {
-                TokenType::OpPlus => Op::Add,
-                TokenType::OpMinus => Op::Sub,
+                TokenType::OpPlus => OpBin::Add,
+                TokenType::OpMinus => OpBin::Sub,
                 _ => unreachable!()
             };
 
@@ -202,7 +203,7 @@ impl Parser<'_>
 
     fn parseMul(&mut self) -> Node
     {
-        let mut lhs = self.parsePrimary();
+        let mut lhs = self.parsePrefix();
 
         if let Some(next) = self.iter.peek() && (*next.getKind() == TokenType::OpStar || *next.getKind() == TokenType::OpSlash)
         {
@@ -210,10 +211,10 @@ impl Parser<'_>
 
             let rhs: Node = self.parseExpression();
 
-            let op: Op = match tok.getKind()
+            let op: OpBin = match tok.getKind()
             {
-                TokenType::OpStar => Op::Mul,
-                TokenType::OpSlash => Op::Div,
+                TokenType::OpStar => OpBin::Mul,
+                TokenType::OpSlash => OpBin::Div,
                 _ => unreachable!()
             };
 
@@ -221,6 +222,29 @@ impl Parser<'_>
         }
 
         lhs
+    }
+
+    fn parsePrefix(&mut self) -> Node
+    {
+        if let Some(next) = self.iter.peek() && (*next.getKind() == TokenType::OpReference || *next.getKind() == TokenType::OpStar)
+        {
+            let tok: &Token = self.iter.next().expect("Failed to get '&' token");
+
+            let node:Node = self.parseExpression();
+
+            let op: OpUn = match *tok.getKind()
+            {
+                TokenType::OpReference => OpUn::AddressOf,
+                TokenType::OpStar => OpUn::Dereference,
+                _ => unreachable!()
+            };
+
+            Node::UnaryOperation(UnaryOperation::newPrefix(op, node))
+        }
+        else
+        {
+            self.parsePrimary()
+        }
     }
 
     fn parsePrimary(&mut self) -> Node
@@ -232,19 +256,19 @@ impl Parser<'_>
 
         if tok.getKind().isType()
         {
-            let varType = tok.getKind().clone();
+            let mut varType = Type::fromToken(tok.getKind().clone());
 
-            let Some(tok) = self.iter.next() else
+            while let Some(tok) = self.iter.next()
             {
-                panic!("An error has occurred at the end of the file. A variable name was expected.");
-            };
+                match tok.getKind()
+                {
+                    TokenType::Identifier(varName) => return Node::VariableDeclaration(self.parseVariableDeclaration(varType, varName)),
+                    TokenType::OpStar => varType = Type::Pointer(Box::new(varType)),
+                    _ => break
+                }
+            }
 
-            let TokenType::Identifier(varName) = tok.getKind() else
-            {
-                panic!("An error has occurred at {}. A variable name was expected.", tok.getLoc());
-            };
-
-            return Node::VariableDeclaration(self.parseVariableDeclaration(varType, varName));
+            panic!("Expected a variable name");
         }
 
         match tok.getKind()
@@ -261,7 +285,7 @@ impl Parser<'_>
         }
     }
 
-    fn parseVariableDeclaration(&self, varType: TokenType, varName: &str) -> VariableDeclaration
+    fn parseVariableDeclaration(&self, varType: Type, varName: &str) -> VariableDeclaration
     {
         VariableDeclaration::new(varType, varName)
     }

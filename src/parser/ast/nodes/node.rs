@@ -1,6 +1,6 @@
 use std::{fmt::Display, io::Write};
 
-use super::{VariableDeclaration, VariableAccess, BinaryOperation, Conversion, Literal, Type, ToFile, AddressOf};
+use super::{VariableDeclaration, VariableAccess, BinaryOperation, Conversion, Literal, Type, ToFile, UnaryOperation};
 
 #[derive(Default, Debug)]
 pub enum Node
@@ -10,7 +10,7 @@ pub enum Node
     BinaryOperation(BinaryOperation),
     Conversion(Conversion),
     Literal(Literal),
-    AddressOf(AddressOf),
+    UnaryOperation(UnaryOperation),
     #[default]
     Error
 }
@@ -26,7 +26,7 @@ impl Node
             Node::BinaryOperation(binaryOp) => binaryOp.getType(),
             Node::Conversion(conversion) => conversion.getType(),
             Node::Literal(literal) => literal.getType(),
-            Node::AddressOf(addressOf) => addressOf.getType(),
+            Node::UnaryOperation(addressOf) => addressOf.getType(),
             Node::Error => panic!("Cannot get the type of an error node")
         }
     }
@@ -43,7 +43,7 @@ impl Display for Node
             Node::BinaryOperation(binaryOp) => writeln!(f, "{}", binaryOp),
             Node::Conversion(conversion) => write!(f, "{}", conversion),
             Node::Literal(literal) => writeln!(f, "{}", literal),
-            Node::AddressOf(addressOf) => write!(f, "{}", addressOf),
+            Node::UnaryOperation(addressOf) => write!(f, "{}", addressOf),
             Node::Error => write!(f, "error")
         }
     }
@@ -60,7 +60,7 @@ impl ToFile for Node
             Node::BinaryOperation(binOp) => binOp.toFile(f, indents, last),
             Node::Conversion(conversion) => conversion.toFile(f, indents, last),
             Node::Literal(literal) => literal.toFile(f, indents, last),
-            Node::AddressOf(addressOf) => addressOf.toFile(f, indents, last),
+            Node::UnaryOperation(addressOf) => addressOf.toFile(f, indents, last),
             Node::Error => 
             {
                 let indent:String = Self::getIndent(indents, last);
