@@ -82,7 +82,11 @@ impl SemanticAnalyser
             _ => ()
         }
 
-        
+        match (unaryOp.getOp(), unaryOp.getNode())
+        {
+            (UnOp::Dereference | UnOp::AddressOf, node) if !matches!(node, Node::VariableAccess(_)) && !matches!(node, Node::UnaryOperation(_)) => panic!("Can only dereference or get the memory address of variables"),
+            _ => ()
+        }
     }
 
     fn analyseNode(&mut self, node: &mut Node)
