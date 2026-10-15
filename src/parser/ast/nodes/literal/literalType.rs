@@ -1,4 +1,4 @@
-use crate::parser::ast::Type;
+use crate::parser::ast::{Type, nodes::Node};
 use inkwell::{values::BasicValueEnum, context::Context};
 use std::fmt::Display;
 
@@ -8,7 +8,8 @@ pub enum LiteralType
     Integer(i32),
     Float(f32),
     Bool(bool),
-    Char(char)
+    Char(char),
+    Array(Vec<Node>)
 }
 
 impl LiteralType
@@ -21,6 +22,7 @@ impl LiteralType
             LiteralType::Float(_) => Type::Float,
             LiteralType::Bool(_) => Type::Bool,
             LiteralType::Char(_) => Type::Char,
+            LiteralType::Array(arr) => Type::Array(arr.len() as u32, Box::new(arr[0].getType()))
         }
     }
 
@@ -31,7 +33,8 @@ impl LiteralType
             LiteralType::Integer(integer) => context.i32_type().const_int(*integer as u64, true).into(),
             LiteralType::Float(float) => context.f32_type().const_float(*float as f64).into(),
             LiteralType::Bool(boolean) => context.bool_type().const_int(*boolean as u64, false).into(),
-            LiteralType::Char(character) => context.i8_type().const_int(*character as u64, false).into()
+            LiteralType::Char(character) => context.i8_type().const_int(*character as u64, false).into(),
+            LiteralType::Array(_) => panic!("Cannot get basic value from array literal")
         }
     }
 }
@@ -45,7 +48,8 @@ impl Display for LiteralType
             LiteralType::Integer(integer) => write!(f, "Integer: {}", integer),
             LiteralType::Float(float) => write!(f, "Float: {}", float),
             LiteralType::Bool(boolean) => write!(f, "Boolean: {}", boolean),
-            LiteralType::Char(character) => write!(f, "Character: \'{}\'", character)
+            LiteralType::Char(character) => write!(f, "Character: \'{}\'", character),
+            LiteralType::Array(arr) => write!(f, "Array: {:?}", arr)
         }
     }
 }

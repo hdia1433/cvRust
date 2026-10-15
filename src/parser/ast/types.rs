@@ -1,6 +1,6 @@
 use std::fmt::Display;
 use crate::lexer::token::TokenType;
-use inkwell::{context::Context, types::{BasicMetadataTypeEnum, FunctionType, BasicTypeEnum}, AddressSpace};
+use inkwell::{AddressSpace, context::Context, types::{BasicMetadataTypeEnum, BasicType, BasicTypeEnum, FunctionType}};
 
 #[derive(PartialEq, Clone, Default, Debug)]
 pub enum Type
@@ -11,6 +11,7 @@ pub enum Type
     Bool,
     Char,
     Pointer(Box<Type>),
+    Array(u32, Box<Type>),
     #[default]
     Error
 }
@@ -40,6 +41,7 @@ impl Type
             Type::Bool => context.bool_type().fn_type(args, isVarArgs),
             Type::Char => context.i8_type().fn_type(args, isVarArgs),
             Type::Pointer(_) => context.ptr_type(AddressSpace::default()).fn_type(args, isVarArgs),
+            Type::Array(size, arrType) => arrType.varType(context).array_type(*size).fn_type(args, isVarArgs),
             Type::Error => panic!("Cannot convert Type::Error into a function type")
         }
     }
@@ -53,6 +55,7 @@ impl Type
             Type::Bool => context.bool_type().into(),
             Type::Char => context.i8_type().into(),
             Type::Pointer(_) => context.ptr_type(AddressSpace::default()).into(),
+            Type::Array(size, arrType) => arrType.varType(context).array_type(*size).into(),
             Type::Void => panic!("Variables cannot be of the type <void>"),
             Type::Error => panic!("Type::Error couldn't be converted into variable type")
         }
@@ -72,6 +75,7 @@ impl Display for Type
             Type::Bool => "<bool>".to_string(),
             Type::Char => "<char>".to_string(),
             Type::Pointer(ptr) => format!("<{}*>", ptr),
+            Type::Array(size, arrType) => format!("<{}[{}]>", arrType, size),
             Type::Error => "<Error>".to_string()
         })?;
 

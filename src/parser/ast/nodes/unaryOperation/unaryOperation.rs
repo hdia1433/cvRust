@@ -19,6 +19,11 @@ impl UnaryOperation
         Self {prefix: true, op, node: Box::new(node)}
     }
 
+    pub fn newPostfix(op: Op, node: Node) -> Self
+    {
+        Self {prefix: false, op, node: Box::new(node)}
+    }
+
     pub fn getType(&self) -> Type
     {
         match self.op
@@ -32,6 +37,15 @@ impl UnaryOperation
                 };
 
                 *ptr
+            },
+            Op::Subscript(_) =>
+            {
+                let Type::Array(_, arr) = self.node.getType() else
+                {
+                    panic!("Cannot get subscript type of a non array")
+                };
+
+                *arr
             }
         }
     }

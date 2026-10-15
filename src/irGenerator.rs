@@ -208,7 +208,8 @@ impl<'a> IRGenerator<'a>
                 };
 
                 Some(self.builder.build_load(subType.varType(&self.context), ptr, "deref").expect("Failed to build load instruction"))
-            }
+            },
+            UnOp::Subscript(_) => todo!()
         }
     }
 

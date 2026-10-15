@@ -230,7 +230,7 @@ impl Parser<'_>
         {
             let tok: &Token = self.iter.next().expect("Failed to get '&' token");
 
-            let node:Node = self.parsePrimary();
+            let node:Node = self.parsePostfix();
 
             let op: OpUn = match *tok.getKind()
             {
@@ -243,8 +243,43 @@ impl Parser<'_>
         }
         else
         {
-            self.parsePrimary()
+            self.parsePostfix()
         }
+    }
+
+    fn parsePostfix(&mut self) -> Node
+    {
+        let mut node = self.parsePrimary();
+
+        if let Some(next) = self.iter.peek() && *next.getKind() == TokenType::PuncOpenBracket
+        {
+            let tok = self.iter.next().expect("Failed to get '[' token");
+
+            let op: OpUn = match tok.getKind()
+            {
+                TokenType::PuncOpenBracket =>
+                {
+                    let index = self.parseExpression();
+
+                    let Some(tok) = self.iter.next() else
+                    {
+                        panic!("Expected ']' to close subscript")
+                    };
+
+                    if *tok.getKind() != TokenType::PuncCloseBracket
+                    {
+                        panic!("Expected ']' to close subscript")
+                    }
+
+                    OpUn::Subscript(Box::new(index))
+                },
+                _ => unreachable!()
+            };
+
+            node = Node::UnaryOperation(UnaryOperation::newPostfix(op, node))
+        }
+
+        node
     }
 
     fn parsePrimary(&mut self) -> Node
@@ -264,6 +299,33 @@ impl Parser<'_>
                 {
                     TokenType::Identifier(varName) => return Node::VariableDeclaration(self.parseVariableDeclaration(varType, varName)),
                     TokenType::OpStar => varType = Type::Pointer(Box::new(varType)),
+                    TokenType::PuncOpenBracket =>
+                    {
+                        let Some(tok) = self.iter.next() else
+                        {
+                            panic!("Needed a closing ']' for array type definition")
+                        };
+
+                        match tok.getKind()
+                        {
+                            TokenType::LitInteger(int) => 
+                            {
+                                let Some(tok) = self.iter.next() else
+                                {
+                                    panic!("Needed a closing ']' for array type definition")
+                                };
+
+                                if *tok.getKind() != TokenType::PuncCloseBracket
+                                {
+                                    panic!("Needed a closing ']' for array type definition")
+                                }
+
+                                varType = Type::Array(*int as u32, Box::new(varType));
+                            },
+                            TokenType::PuncCloseBracket => varType = Type::Array(0, Box::new(varType)),
+                            _ => panic!("Needed a closing ']' for array type definition")
+                        }
+                    }
                     _ => break
                 }
             }
@@ -273,15 +335,50 @@ impl Parser<'_>
 
         match tok.getKind()
         {
-            TokenType::LitInteger(integer) => 
-            {
-                Node::Literal(Literal::new(LiteralType::Integer(*integer)))
-            },
+            TokenType::LitInteger(integer) => Node::Literal(Literal::new(LiteralType::Integer(*integer))),
             TokenType::LitFloat(float) => Node::Literal(Literal::new(LiteralType::Float(*float))),
             TokenType::LitBool(boolean) => Node::Literal(Literal::new(LiteralType::Bool(*boolean))),
             TokenType::LitChar(character) => Node::Literal(Literal::new(LiteralType::Char(*character))),
             TokenType::Identifier(ident) => Node::VariableAccess(VariableAccess::new(ident)),
-            _ => unreachable!()
+            TokenType::PuncOpenBracket => Node::Literal(Literal::new(self.parseArrayLiteral())),
+            _ => panic!("Invalid token for primary")
+        }
+    }
+
+    fn parseArrayLiteral(&mut self) -> LiteralType
+    {
+        let mut values:Vec<Node> = Vec::new();
+
+        loop
+        {
+            let Some(tok) = self.iter.next() else
+            {
+                panic!("Expected ']' to end array literal")
+            };
+
+            values.push(match tok.getKind()
+            {
+                TokenType::LitInteger(int) => Node::Literal(Literal::new(LiteralType::Integer(*int))),
+                TokenType::LitFloat(float) => Node::Literal(Literal::new(LiteralType::Float(*float))),
+                TokenType::LitBool(boolean) => Node::Literal(Literal::new(LiteralType::Bool(*boolean))),
+                TokenType::LitChar(character) => Node::Literal(Literal::new(LiteralType::Char(*character))),
+                TokenType::Identifier(ident) => Node::VariableAccess(VariableAccess::new(ident)),
+                TokenType::PuncCloseBracket => break LiteralType::Array(values),
+                TokenType::PuncOpenBracket => Node::Literal(Literal::new(self.parseArrayLiteral())),
+                _ => panic!("Invalid token for inside array literal")
+            });
+
+            let Some(tok) = self.iter.next() else
+            {
+                panic!("Expected ']' to end array literal")
+            };
+
+            match tok.getKind()
+            {
+                TokenType::PuncComma => continue,
+                TokenType::PuncCloseBracket => break LiteralType::Array(values),
+                _ => panic!("Expected ']' to end array literal")
+            }
         }
     }
 

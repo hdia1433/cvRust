@@ -1,10 +1,12 @@
 use std::fmt::Display;
+use crate::parser::ast::nodes::Node;
 
 #[derive(Debug)]
 pub enum Op
 {
     AddressOf,
     Dereference,
+    Subscript(Box<Node>)
 }
 
 impl Display for Op
@@ -13,8 +15,9 @@ impl Display for Op
     {
         write!(f, "{}", match self
         {
-            Op::AddressOf => "&",
-            Op::Dereference => "*",
+            Op::AddressOf => "&".to_string(),
+            Op::Dereference => "*".to_string(),
+            Op::Subscript(i) => format!("[{}]", i)
         })
     }
 }
