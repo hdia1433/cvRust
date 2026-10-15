@@ -114,9 +114,12 @@ impl Lexer<'_>
                     '&' => TokenType::OpReference,
                     '(' => TokenType::PuncOpenParen,
                     ')' => TokenType::PuncCloseParen,
+                    '[' => TokenType::PuncOpenBracket,
+                    ']' => TokenType::PuncCloseBracket,
                     '{' => TokenType::PuncOpenBrace,
                     '}' => TokenType::PuncCloseBrace,
                     ';' => TokenType::PuncSemi,
+                    ',' => TokenType::PuncComma,
                     '\'' =>
                     {
                         let Some(ch) = self.next() else
