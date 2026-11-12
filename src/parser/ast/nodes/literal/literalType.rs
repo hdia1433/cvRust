@@ -1,6 +1,7 @@
-use crate::parser::ast::{Type, nodes::Node};
+use crate::parser::ast::{ToFile, Type, nodes::Node};
+use bitvec::vec::BitVec;
 use inkwell::{values::BasicValueEnum, context::Context};
-use std::fmt::Display;
+use std::{fmt::Display, io::Write};
 
 #[derive(Debug)]
 pub enum LiteralType
@@ -49,7 +50,37 @@ impl Display for LiteralType
             LiteralType::Float(float) => write!(f, "Float: {}", float),
             LiteralType::Bool(boolean) => write!(f, "Boolean: {}", boolean),
             LiteralType::Char(character) => write!(f, "Character: \'{}\'", character),
-            LiteralType::Array(arr) => write!(f, "Array: {:?}", arr)
+            LiteralType::Array(arr) => {write!(f, "Array: {:?}", arr)}
+        }
+    }
+}
+
+impl ToFile for LiteralType
+{
+    fn toFile(&self, f: &mut std::fs::File, indents: &mut BitVec, last: bool) -> std::io::Result<()> 
+    {
+        let indent: String = Self::getIndent(indents, last);
+        write!(f, "{}", indent)?;
+        match self
+        {
+            LiteralType::Integer(integer) => write!(f, "Integer: {}", integer),
+            LiteralType::Float(float) => write!(f, "Float: {}", float),
+            LiteralType::Bool(boolean) => write!(f, "Boolean: {}", boolean),
+            LiteralType::Char(character) => write!(f, "Character: \'{}\'", character),
+            LiteralType::Array(arr) =>
+            {
+                write!(f, "Array:")?;
+
+                let mut innerIndents: BitVec = indents.clone();
+                innerIndents.push(!last);
+
+                for i in 0..arr.len()
+                {
+                    arr[i].toFile(f, &mut innerIndents, i == arr.len() - 1)?;
+                };
+
+                Ok(())
+            }
         }
     }
 }

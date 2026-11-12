@@ -42,7 +42,7 @@ impl Display for Node
             Node::VariableAccess(varAccess) => writeln!(f, "{}", varAccess),
             Node::BinaryOperation(binaryOp) => writeln!(f, "{}", binaryOp),
             Node::Conversion(conversion) => write!(f, "{}", conversion),
-            Node::Literal(literal) => writeln!(f, "{}", literal),
+            Node::Literal(literal) => write!(f, "{}", literal),
             Node::UnaryOperation(addressOf) => write!(f, "{}", addressOf),
             Node::Error => write!(f, "error")
         }

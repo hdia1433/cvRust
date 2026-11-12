@@ -1,4 +1,6 @@
 use std::{fmt::Display, io::Write};
+use bitvec::vec::BitVec;
+
 use super::LiteralType;
 use crate::parser::ast::{ToFile, Type};
 
@@ -31,7 +33,7 @@ impl Display for Literal
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result 
     {
-        writeln!(f, "Literal: {}", self.value)
+        write!(f, "Literal: {}", self.value)
     }
 }
 
@@ -41,6 +43,9 @@ impl ToFile for Literal
     {
         let indent:String = Self::getIndent(indents, last);
 
-        write!(f, "{}Literal({})", indent, self.value)
+        write!(f, "{}Literal:", indent)?;
+        let mut innerIndents: BitVec = indents.clone();
+        innerIndents.push(!last);
+        self.value.toFile(f, &mut innerIndents, true)
     }
 }
