@@ -60,6 +60,18 @@ impl Type
             Type::Error => panic!("Type::Error couldn't be converted into variable type")
         }
     }
+
+    pub fn setArrSize(&mut self, size: u32)
+    {
+        if let Self::Array(arrSize, _) = self
+        {
+            *arrSize = size;
+        }
+        else
+        {
+            panic!("Type wasn't an array type")
+        }
+    }
 }
 
 impl Display for Type

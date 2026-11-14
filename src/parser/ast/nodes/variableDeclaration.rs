@@ -20,6 +20,11 @@ impl VariableDeclaration
         &self.varType
     }
 
+    pub fn getVarTypeMut(&mut self) -> &mut Type
+    {
+        &mut self.varType
+    }
+
     pub fn getName(&self) -> &str
     {
         &self.name

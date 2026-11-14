@@ -1,9 +1,9 @@
 use crate::parser::ast::{ToFile, Type, nodes::Node};
 use bitvec::vec::BitVec;
 use inkwell::{values::BasicValueEnum, context::Context};
-use std::{fmt::Display, io::Write};
+use std::{fmt::Display, io::Write, ops::Deref, borrow::Cow};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum LiteralType
 {
     Integer(i32),
@@ -15,15 +15,15 @@ pub enum LiteralType
 
 impl LiteralType
 {
-    pub fn getType(&self) -> Type
+    pub fn getType(&self) -> Cow<'_, Type>
     {
         match self
         {
-            LiteralType::Integer(_) => Type::Int,
-            LiteralType::Float(_) => Type::Float,
-            LiteralType::Bool(_) => Type::Bool,
-            LiteralType::Char(_) => Type::Char,
-            LiteralType::Array(arr) => Type::Array(arr.len() as u32, Box::new(arr[0].getType()))
+            LiteralType::Integer(_) => Cow::Owned(Type::Int),
+            LiteralType::Float(_) => Cow::Owned(Type::Float),
+            LiteralType::Bool(_) => Cow::Owned(Type::Bool),
+            LiteralType::Char(_) => Cow::Owned(Type::Char),
+            LiteralType::Array(arr) => Cow::Owned(Type::Array(arr.len() as u32, Box::new(arr[0].getType().deref().clone())))
         }
     }
 

@@ -1,8 +1,9 @@
-use std::{fmt::Display, io::Write};
+use std::{fmt::Display, io::Write, borrow::Cow};
 
 use super::{VariableDeclaration, VariableAccess, BinaryOperation, Conversion, Literal, Type, ToFile, UnaryOperation};
+use crate::errors::{CompilerError::{MutTypeError, ErrorNodeFound}, CvError::{self, CompilerError}};
 
-#[derive(Default, Debug)]
+#[derive(Default, Debug, Clone)]
 pub enum Node
 {
     VariableDeclaration(VariableDeclaration),
@@ -17,17 +18,31 @@ pub enum Node
 
 impl Node
 {
-    pub fn getType(&self) -> Type
+    pub fn getType(&self) -> Cow<'_, Type>
     {
         match self
         {
-            Node::VariableDeclaration(varDecl) => varDecl.getVarType().clone(),
-            Node::VariableAccess(varAccess) => varAccess.getVarType().clone(),
+            Node::VariableDeclaration(varDecl) => Cow::Borrowed(varDecl.getVarType()),
+            Node::VariableAccess(varAccess) => Cow::Borrowed(varAccess.getVarType()),
             Node::BinaryOperation(binaryOp) => binaryOp.getType(),
-            Node::Conversion(conversion) => conversion.getType(),
+            Node::Conversion(conversion) => Cow::Borrowed(conversion.getType()),
             Node::Literal(literal) => literal.getType(),
             Node::UnaryOperation(addressOf) => addressOf.getType(),
             Node::Error => panic!("Cannot get the type of an error node")
+        }
+    }
+
+    pub fn getTypeMut(&mut self) -> Result<&mut Type, CvError>
+    {
+        match self
+        {
+            Node::VariableDeclaration(varDecl) => Ok(varDecl.getVarTypeMut()),
+            Node::VariableAccess(varAccess) => Ok(varAccess.getVarTypeMut()),
+            Node::BinaryOperation(binaryOp) => binaryOp.getTypeMut(),
+            Node::Conversion(conversion) => Ok(conversion.getTypeMut()),
+            Node::Literal(_) => Err(CompilerError(MutTypeError("A literal ".to_owned()))),
+            Node::UnaryOperation(unaryOp) => unaryOp.getTypeMut(),
+            Node::Error => Err(CompilerError(ErrorNodeFound)),
         }
     }
 }

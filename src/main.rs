@@ -7,14 +7,16 @@ pub mod lexer;
 pub mod parser;
 pub mod semanticAnalyser;
 pub mod irGenerator;
+pub mod errors;
 
 use lexer::Lexer;
 use parser::Parser;
 use semanticAnalyser::SemanticAnalyser;
+use errors::CvResult;
 
 pub use irGenerator::IRGenerator;
 
-fn main()
+fn main() -> CvResult<()>
 {
     let debug = if cfg!(debug_assertions)
     {
@@ -45,7 +47,7 @@ fn main()
 
     let mut semanticAnalyser = SemanticAnalyser::new();
 
-    semanticAnalyser.analyse(parser.getAstMut());
+    semanticAnalyser.analyse(parser.getAstMut())?;
 
     if debug
     {
@@ -95,4 +97,6 @@ fn main()
         ])
         .status()
         .expect("Failed to compile object file");
+
+    Ok(())
 }

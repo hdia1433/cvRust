@@ -1,10 +1,10 @@
-use crate::parser::ast::{nodes::{Node, Type}, ToFile};
+use crate::{errors::{CvError::{self, CompilerError, RuntimeError}, CompilerError::MutTypeError, RuntimeError::{InvalidDeref, InvalidSubscript}}, parser::ast::{ToFile, nodes::{Node, Type}}};
 use super::Op;
 use bitvec::prelude::BitVec;
 
-use std::{io::Write, fmt::Display};
+use std::{borrow::Cow, fmt::Display, io::Write, ops::Deref};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct UnaryOperation
 {
     prefix: bool,
@@ -24,28 +24,54 @@ impl UnaryOperation
         Self {prefix: false, op, node: Box::new(node)}
     }
 
-    pub fn getType(&self) -> Type
+    pub fn getType(&self) -> Cow<'_, Type>
     {
         match self.op
         {
-            Op::AddressOf => Type::Pointer(Box::new(self.node.getType())),
+            Op::AddressOf => Cow::Owned(Type::Pointer(Box::new(self.node.getType().deref().clone()))),
             Op::Dereference => 
             {
-                let Type::Pointer(ptr) = self.node.getType() else
+                if !matches!(&*self.node.getType(), Type::Pointer(_))
                 {
                     panic!("Cannot get dereferenced type of a non pointer")
                 };
 
-                *ptr
+                self.node.getType()
             },
             Op::Subscript(_) =>
             {
-                let Type::Array(_, arr) = self.node.getType() else
+                if !matches!(&*self.node.getType(), Type::Array(_, _))
                 {
                     panic!("Cannot get subscript type of a non array")
                 };
 
-                *arr
+                self.node.getType()
+            }
+        }
+    }
+
+    pub fn getTypeMut(&mut self) -> Result<&mut Type, CvError>
+    {
+        match self.op
+        {
+            Op::AddressOf => Err(CompilerError(MutTypeError("An address of unary operator ".to_owned()))),
+            Op::Dereference =>
+            {
+                if !matches!(&*self.node.getType(), Type::Pointer(_))
+                {
+                    return Err(RuntimeError(InvalidDeref(self.node.getType().deref().clone())))
+                }
+
+                self.node.getTypeMut()
+            },
+            Op::Subscript(_) =>
+            {
+                if !matches!(&*self.node.getType(), Type::Array(_, _))
+                {
+                    return Err(RuntimeError(InvalidSubscript(self.node.getType().deref().clone())))
+                }
+
+                self.node.getTypeMut()
             }
         }
     }

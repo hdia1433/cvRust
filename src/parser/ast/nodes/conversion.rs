@@ -1,7 +1,7 @@
 use super::{Node, ToFile, Type};
-use std::{fmt::Display, io::Write};
+use std::{fmt::Display, io::Write, borrow::Cow};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Conversion
 {
     node: Box<Node>,
@@ -25,12 +25,17 @@ impl Conversion
         &self.node
     }
 
-    pub fn getType(&self) -> Type
+    pub fn getType(&self) -> &Type
     {
-        self.toType.clone()
+        &self.toType
     }
 
-    pub fn getInitialType(&self) -> Type
+    pub fn getTypeMut(&mut self) -> &mut Type
+    {
+        &mut self.toType
+    }
+
+    pub fn getInitialType(&self) -> Cow<'_, Type>
     {
         self.node.getType()
     }

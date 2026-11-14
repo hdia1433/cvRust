@@ -1,7 +1,7 @@
 use std::{fmt::Display, io::Write};
 use super::{ToFile, Type};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct VariableAccess
 {
     name: String,
@@ -23,6 +23,11 @@ impl VariableAccess
     pub fn getVarType(&self) -> &Type
     {
         &self.varType
+    }
+
+    pub fn getVarTypeMut(&mut self) -> &mut Type
+    {
+        &mut self.varType
     }
 
     pub fn setVarType(&mut self, varType: Type)

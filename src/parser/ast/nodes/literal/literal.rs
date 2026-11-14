@@ -1,11 +1,11 @@
-use std::{fmt::Display, io::Write};
+use std::{borrow::Cow, fmt::Display, io::Write};
 use bitvec::vec::BitVec;
 
 use super::LiteralType;
 use crate::parser::ast::{ToFile, Type};
 
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Literal
 {
     value: LiteralType
@@ -23,7 +23,7 @@ impl Literal
        &self.value
     }
 
-    pub fn getType(&self) -> Type
+    pub fn getType(&self) -> Cow<'_, Type>
     {
         self.value.getType()
     }

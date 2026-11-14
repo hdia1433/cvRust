@@ -1,10 +1,10 @@
 use crate::parser::ast::{nodes::{Node, Conversion}, Type};
 pub use super::Op;
-use std::{fmt::Display, io::Write};
-use crate::parser::ast::ToFile;
+use std::{borrow::Cow, fmt::Display, io::Write};
+use crate::{parser::ast::ToFile, errors::{CompilerError::MutTypeError, CvError::{self, CompilerError}}};
 use bitvec::prelude::BitVec;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct BinaryOperation
 {
     lhs: Box<Node>,
@@ -24,7 +24,7 @@ impl BinaryOperation
         &self.lhs
     }
 
-    pub fn getRhs(&self) -> &Box<Node>
+    pub fn getRhs(&self) -> &Node
     {
         &self.rhs
     }
@@ -43,12 +43,12 @@ impl BinaryOperation
         self.rhs = Box::new(Node::Conversion(Conversion::newFromBox(rhs, toType)));
     }
 
-    pub fn getLhsMut(&mut self) -> &mut Box<Node>
+    pub fn getLhsMut(&mut self) -> &mut Node
     {
         &mut self.lhs
     }
 
-    pub fn getRhsMut(&mut self) -> &mut Box<Node>
+    pub fn getRhsMut(&mut self) -> &mut Node
     {
         &mut self.rhs
     }
@@ -58,12 +58,21 @@ impl BinaryOperation
         &self.op
     }
 
-    pub fn getType(&self) -> Type
+    pub fn getType(&self) -> Cow<'_, Type>
     {
         match self.op
         {
-            Op::Equals => Type::Bool,
+            Op::Equals => Cow::Owned(Type::Bool),
             _ => self.lhs.getType()
+        }
+    }
+
+    pub fn getTypeMut(&mut self) -> Result<&mut Type, CvError>
+    {
+        match self.op
+        {
+            Op::Equals => Err(CompilerError(MutTypeError("A binary operation containing the '=='operator ".to_owned()))),
+            _ => self.lhs.getTypeMut()
         }
     }
 }

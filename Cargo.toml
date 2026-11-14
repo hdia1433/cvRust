@@ -6,4 +6,5 @@ edition = "2024"
 [dependencies]
 bitvec = "1.1.1"
 inkwell = { version = "0.10.0", features = ["llvm22-1"] }
+thiserror = "2.0.21"
 

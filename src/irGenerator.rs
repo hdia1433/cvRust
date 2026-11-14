@@ -125,7 +125,7 @@ impl<'a> IRGenerator<'a>
                 _ => panic!("Only a variable declaration can be assigned to.")
             };
 
-            let Some(value) = self.translateNode(binaryOp.getRhs().as_ref()) else
+            let Some(value) = self.translateNode(binaryOp.getRhs()) else
             {
                 panic!("A variable must be assigned to a basic value")
             };
@@ -202,7 +202,7 @@ impl<'a> IRGenerator<'a>
                     panic!("Can only dereference pointer values")
                 };
 
-                let Type::Pointer(subType) = unaryOp.getNode().getType() else
+                let Type::Pointer(subType) = &*unaryOp.getNode().getType() else
                 {
                     panic!("Can only deference a value of pointer type");
                 };
@@ -215,7 +215,7 @@ impl<'a> IRGenerator<'a>
 
     fn translateConversion(&mut self, conversion: &Conversion) -> Option<BasicValueEnum<'a>>
     {
-        match (conversion.getInitialType(), conversion.getType())
+        match (&*conversion.getInitialType(), conversion.getType())
         {
             (Type::Int, Type::Float) =>
             {

@@ -1,7 +1,7 @@
 use std::fmt::Display;
 use crate::parser::ast::nodes::Node;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Op
 {
     AddressOf,

@@ -1,4 +1,6 @@
-use crate::parser::ast::{Type, nodes::{Function, GlobalScope, Node, VariableAccess, VariableDeclaration, binaryOperation::{BinaryOperation, Op as BinOp}, unaryOperation::{UnaryOperation, Op as UnOp}}};
+use std::ops::Deref;
+
+use crate::{errors::{CvError, CvResult}, parser::ast::{Type, nodes::{Function, GlobalScope, Node, VariableAccess, VariableDeclaration, binaryOperation::{BinaryOperation, Op as BinOp}, unaryOperation::{Op as UnOp, UnaryOperation}}}};
 
 pub use super::SemanticScope;
 
@@ -14,24 +16,28 @@ impl SemanticAnalyser
         Self {varScopes: Vec::new()}
     }
 
-    pub fn analyse(&mut self, ast: &mut GlobalScope)
+    pub fn analyse(&mut self, ast: &mut GlobalScope) -> CvResult<()>
     {
         let functions = ast.getFunctionsMut();
 
         for func in functions
         {
-            self.analyseFunction(func);
+            self.analyseFunction(func)?;
         }
+
+        Ok(())
     }
 
-    fn analyseFunction(&mut self, func: &mut Function)
+    fn analyseFunction(&mut self, func: &mut Function) -> CvResult<()>
     {
         self.varScopes.push(SemanticScope::new());
 
         for statement in func.getBodyMut()
         {
-            self.analyseNode(statement);
+            self.analyseNode(statement)?;
         }
+
+        Ok(())
     }
 
     fn analyseVarDecl(&mut self, varDecl: &mut VariableDeclaration)
@@ -56,29 +62,43 @@ impl SemanticAnalyser
         varAccess.setVarType(varType);
     }
 
-    fn analyseBinaryOp(&mut self, binaryOp: &mut BinaryOperation)
+    fn analyseBinaryOp(&mut self, binaryOp: &mut BinaryOperation) -> Result<(), CvError>
     {
-        self.analyseNode(binaryOp.getRhsMut());
-        self.analyseNode(binaryOp.getLhsMut());
+        self.analyseNode(binaryOp.getRhsMut())?;
+        self.analyseNode(binaryOp.getLhsMut())?;
 
-        if binaryOp.getLhs().getType() != binaryOp.getRhs().getType()
+        if &*binaryOp.getLhs().getType() != &*binaryOp.getRhs().getType()
         {
-            match (binaryOp.getLhs().getType(), binaryOp.getOp(), binaryOp.getRhs().getType())
+            let op: BinOp = binaryOp.getOp().clone();
+            let rhsType: Type = binaryOp.getRhs().getType().deref().clone();
+
+            match (binaryOp.getLhsMut().getTypeMut()?, op, rhsType)
             {
-                (Type::Int, op, Type::Float) if *op != BinOp::Assign => binaryOp.convertLhs(Type::Float),
-                (type1, _, type2) if type1 == Type::Char || type2 == Type::Char => panic!("<char> cannot be implicitly converted into another type"),
-                _ => binaryOp.convertRhs(binaryOp.getLhs().getType())
+                (Type::Int, op, Type::Float) if op != BinOp::Assign => binaryOp.convertLhs(Type::Float),
+                (type1, _, type2) if *type1 != type2 && (*type1 == Type::Char || type2 == Type::Char) => panic!("<char> cannot be implicitly converted into another type"),
+                (Type::Array(varSize, varType), BinOp::Assign, Type::Array(arrSize, arrType)) if *varSize == 0 && arrSize != 0 =>
+                {
+                    *varSize = arrSize;
+
+                    if *varType != arrType
+                    {
+                        binaryOp.convertRhs(binaryOp.getLhs().getType().deref().clone());
+                    }
+                },
+                _ => binaryOp.convertRhs(binaryOp.getLhs().getType().deref().clone())
             }
         }
+
+        Ok(())
     }
 
-    fn analyseUnaryOp(&mut self, unaryOp: &mut UnaryOperation)
+    fn analyseUnaryOp(&mut self, unaryOp: &mut UnaryOperation) -> CvResult<()>
     {
-        self.analyseNode(unaryOp.getNodeMut());
+        self.analyseNode(unaryOp.getNodeMut())?;
 
         match (unaryOp.getOp(), unaryOp.getNode().getType())
         {
-            (UnOp::Dereference, nodeType) if !matches!(nodeType, Type::Pointer(_)) => panic!("Cannot dereference a node that isn't a pointer"),
+            (UnOp::Dereference, nodeType) if !matches!(&*nodeType, Type::Pointer(_)) => panic!("Cannot dereference a node that isn't a pointer"),
             _ => ()
         }
 
@@ -87,20 +107,24 @@ impl SemanticAnalyser
             (UnOp::Dereference | UnOp::AddressOf, node) if !matches!(node, Node::VariableAccess(_)) && !matches!(node, Node::UnaryOperation(_)) => panic!("Can only dereference or get the memory address of variables"),
             _ => ()
         }
+
+        Ok(())
     }
 
-    fn analyseNode(&mut self, node: &mut Node)
+    fn analyseNode(&mut self, node: &mut Node) -> Result<(), CvError>
     {
         match node
         {
             Node::VariableDeclaration(varDecl) => self.analyseVarDecl(varDecl),
             Node::VariableAccess(varAccess) => self.analyseVarAccess(varAccess),
-            Node::BinaryOperation(binaryOp) => self.analyseBinaryOp(binaryOp),
+            Node::BinaryOperation(binaryOp) => self.analyseBinaryOp(binaryOp)?,
             Node::Conversion(_) => (),
             Node::Literal(_) => (),
-            Node::UnaryOperation(unaryOp) => self.analyseUnaryOp(unaryOp),
+            Node::UnaryOperation(unaryOp) => self.analyseUnaryOp(unaryOp)?,
             Node::Error => panic!("Error node found")
         }
+
+        Ok(())
     }
 
     fn checkForVar(&mut self, name: &str) -> Option<Type>
