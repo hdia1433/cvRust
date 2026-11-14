@@ -20,9 +20,14 @@ impl Conversion
         Self {node, toType}
     }
 
-    pub fn getNode(&self) -> &Box<Node>
+    pub fn getNode(&self) -> &Node
     {
         &self.node
+    }
+
+    pub fn getNodeMut(&mut self) -> &mut Node
+    {
+        &mut self.node
     }
 
     pub fn getType(&self) -> &Type

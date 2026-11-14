@@ -19,7 +19,7 @@ impl BinaryOperation
         Self {lhs: Box::new(lhs), op, rhs: Box::new(rhs)}
     }
 
-    pub fn getLhs(&self) -> &Box<Node>
+    pub fn getLhs(&self) -> &Node
     {
         &self.lhs
     }

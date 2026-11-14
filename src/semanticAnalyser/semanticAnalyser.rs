@@ -1,6 +1,6 @@
-use std::ops::Deref;
+use std::{ops::Deref};
 
-use crate::{errors::{CvError, CvResult}, parser::ast::{Type, nodes::{Function, GlobalScope, Node, VariableAccess, VariableDeclaration, binaryOperation::{BinaryOperation, Op as BinOp}, unaryOperation::{Op as UnOp, UnaryOperation}}}};
+use crate::{errors::{CvError::{self, RuntimeError}, CvResult, RuntimeError::InvalidConversion}, parser::ast::{Type, nodes::{Conversion, Function, GlobalScope, Node, VariableAccess, VariableDeclaration, binaryOperation::{BinaryOperation, Op as BinOp}, unaryOperation::{Op as UnOp, UnaryOperation}}}};
 
 pub use super::SemanticScope;
 
@@ -64,29 +64,56 @@ impl SemanticAnalyser
 
     fn analyseBinaryOp(&mut self, binaryOp: &mut BinaryOperation) -> Result<(), CvError>
     {
-        self.analyseNode(binaryOp.getRhsMut())?;
         self.analyseNode(binaryOp.getLhsMut())?;
+        self.analyseNode(binaryOp.getRhsMut())?;
 
         if &*binaryOp.getLhs().getType() != &*binaryOp.getRhs().getType()
         {
+            let lhsType: Type = dbg!(dbg!(binaryOp.getLhs()).getType()).deref().clone();
             let op: BinOp = binaryOp.getOp().clone();
             let rhsType: Type = binaryOp.getRhs().getType().deref().clone();
 
-            match (binaryOp.getLhsMut().getTypeMut()?, op, rhsType)
+            match (lhsType, op, rhsType)
             {
                 (Type::Int, op, Type::Float) if op != BinOp::Assign => binaryOp.convertLhs(Type::Float),
-                (type1, _, type2) if *type1 != type2 && (*type1 == Type::Char || type2 == Type::Char) => panic!("<char> cannot be implicitly converted into another type"),
-                (Type::Array(varSize, varType), BinOp::Assign, Type::Array(arrSize, arrType)) if *varSize == 0 && arrSize != 0 =>
+                (type1, _, type2) if type1 != type2 && (type1 == Type::Char || type2 == Type::Char) => panic!("<char> cannot be implicitly converted into another type"),
+                (Type::Array(varSize, varType), BinOp::Assign, Type::Array(arrSize, arrType)) if varSize == 0 && arrSize != 0 =>
                 {
-                    *varSize = arrSize;
+                    if let Node::VariableDeclaration(lhs) = binaryOp.getLhsMut()
+                    {
+                        let lhsType: &mut Type = lhs.getVarTypeMut();
+                            
+                        if let Type::Array(size, _) = lhsType
+                        {
+                            *size = arrSize;
+                        }
 
-                    if *varType != arrType
+                        for scope in self.varScopes.iter_mut().rev()
+                        {
+                            let vars: &mut Vec<VariableDeclaration> = scope.getVarsMut();
+
+                            for i in (0..vars.len()).rev()
+                            {
+                                if vars[i].getName() == lhs.getName()
+                                {
+                                    vars[i] = lhs.clone();
+                                }
+                            }
+                        }
+                    }
+
+                    if varType != arrType
                     {
                         binaryOp.convertRhs(binaryOp.getLhs().getType().deref().clone());
                     }
                 },
                 _ => binaryOp.convertRhs(binaryOp.getLhs().getType().deref().clone())
             }
+        }
+
+        if let Node::Conversion(conversion) = binaryOp.getRhsMut()
+        {
+            self.analyseConversion(conversion)?;
         }
 
         Ok(())
@@ -111,6 +138,33 @@ impl SemanticAnalyser
         Ok(())
     }
 
+    fn analyseConversion(&mut self, conversion: &mut Conversion) -> CvResult<()>
+    {
+        self.analyseNode(conversion.getNodeMut())?;
+
+        dbg!(conversion.getNode());
+
+        let mut type1: &Type = &*conversion.getInitialType();
+        let mut type2: &Type = conversion.getType();
+
+        if let Type::Array(size1, inType1) = type1 && let Type::Array(size2, inType2) = type2 && size1 == size2
+        {
+            type1 = inType1;
+            type2 = inType2;
+        }
+
+        match (type1, type2)
+        {
+            (Type::Int, type2) if *type2 == Type::Float || *type2 == Type::Bool => (),
+            (Type::Float, type2) if *type2 == Type::Int || *type2 == Type::Bool => (),
+            (Type::Bool, type2) if *type2 == Type::Float || *type2 == Type::Int => (),
+            (Type::Pointer(_), Type::Pointer(_)) => (),
+            _ => return Err(RuntimeError(InvalidConversion((*conversion.getInitialType()).clone(), (*conversion.getType()).clone())))
+        }
+
+        Ok(())
+    }
+
     fn analyseNode(&mut self, node: &mut Node) -> Result<(), CvError>
     {
         match node
@@ -118,7 +172,7 @@ impl SemanticAnalyser
             Node::VariableDeclaration(varDecl) => self.analyseVarDecl(varDecl),
             Node::VariableAccess(varAccess) => self.analyseVarAccess(varAccess),
             Node::BinaryOperation(binaryOp) => self.analyseBinaryOp(binaryOp)?,
-            Node::Conversion(_) => (),
+            Node::Conversion(conversion) => self.analyseConversion(conversion)?,
             Node::Literal(_) => (),
             Node::UnaryOperation(unaryOp) => self.analyseUnaryOp(unaryOp)?,
             Node::Error => panic!("Error node found")

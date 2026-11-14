@@ -21,4 +21,9 @@ impl SemanticScope
     {
         &self.vars
     }
+
+    pub fn getVarsMut(&mut self) -> &mut Vec<VariableDeclaration>
+    {
+        &mut self.vars
+    }
 }

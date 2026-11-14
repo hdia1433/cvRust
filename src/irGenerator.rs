@@ -101,7 +101,7 @@ impl<'a> IRGenerator<'a>
     {
         if *binaryOp.getOp() == BinOp::Assign
         {
-            let var = match binaryOp.getLhs().as_ref()
+            let var = match binaryOp.getLhs()
             {
                 Node::VariableDeclaration(varDecl) =>
                 {

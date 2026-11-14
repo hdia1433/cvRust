@@ -40,12 +40,12 @@ impl UnaryOperation
             },
             Op::Subscript(_) =>
             {
-                if !matches!(&*self.node.getType(), Type::Array(_, _))
+                let Type::Array(_, inType) = &*self.node.getType() else
                 {
                     panic!("Cannot get subscript type of a non array")
                 };
 
-                self.node.getType()
+                Cow::Owned((**inType).clone())
             }
         }
     }
