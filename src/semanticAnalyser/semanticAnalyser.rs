@@ -1,6 +1,6 @@
 use std::{ops::Deref};
 
-use crate::{errors::{CvError::{self, RuntimeError}, CvResult, RuntimeError::InvalidConversion}, parser::ast::{Type, nodes::{Conversion, Function, GlobalScope, Node, VariableAccess, VariableDeclaration, binaryOperation::{BinaryOperation, Op as BinOp}, unaryOperation::{Op as UnOp, UnaryOperation}}}};
+use crate::{errors::{CvError::{self, RuntimeError}, CvResult, RuntimeError::InvalidConversion}, parser::ast::{Type, nodes::{Conversion, Function, GlobalScope, Literal, Node, VariableAccess, VariableDeclaration, binaryOperation::{BinaryOperation, Op as BinOp}, literal::LiteralType, unaryOperation::{Op as UnOp, UnaryOperation}}}};
 
 pub use super::SemanticScope;
 
@@ -69,7 +69,7 @@ impl SemanticAnalyser
 
         if &*binaryOp.getLhs().getType() != &*binaryOp.getRhs().getType()
         {
-            let lhsType: Type = dbg!(dbg!(binaryOp.getLhs()).getType()).deref().clone();
+            let lhsType: Type = binaryOp.getLhs().getType().deref().clone();
             let op: BinOp = binaryOp.getOp().clone();
             let rhsType: Type = binaryOp.getRhs().getType().deref().clone();
 
@@ -138,11 +138,36 @@ impl SemanticAnalyser
         Ok(())
     }
 
+    fn analyseLiteral(&mut self, literal: &mut Literal) -> CvResult<()>
+    {
+        if let LiteralType::Array(arr) = literal.getValueMut()
+        {
+            let mut arrType: Option<Type> = None;
+
+            for value in arr
+            {
+                self.analyseNode(value)?;
+
+                match &arrType
+                {
+                    None => arrType = Some(value.getType().deref().clone()),
+                    Some(arrType) => if *value.getType() != *arrType
+                    {
+                        *value = Node::Conversion(Conversion::new(value.clone(), arrType.clone()));
+                        self.analyseNode(value)?;
+                    }
+                }
+            }
+        }
+
+        Ok(())
+    }
+
     fn analyseConversion(&mut self, conversion: &mut Conversion) -> CvResult<()>
     {
         self.analyseNode(conversion.getNodeMut())?;
 
-        dbg!(conversion.getNode());
+        conversion.getNode();
 
         let mut type1: &Type = &*conversion.getInitialType();
         let mut type2: &Type = conversion.getType();
@@ -173,7 +198,7 @@ impl SemanticAnalyser
             Node::VariableAccess(varAccess) => self.analyseVarAccess(varAccess),
             Node::BinaryOperation(binaryOp) => self.analyseBinaryOp(binaryOp)?,
             Node::Conversion(conversion) => self.analyseConversion(conversion)?,
-            Node::Literal(_) => (),
+            Node::Literal(literal) => self.analyseLiteral(literal)?,
             Node::UnaryOperation(unaryOp) => self.analyseUnaryOp(unaryOp)?,
             Node::Error => panic!("Error node found")
         }

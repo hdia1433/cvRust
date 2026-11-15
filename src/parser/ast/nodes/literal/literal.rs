@@ -23,6 +23,11 @@ impl Literal
        &self.value
     }
 
+    pub fn getValueMut(&mut self) -> &mut LiteralType
+    {
+        &mut self.value
+    }
+
     pub fn getType(&self) -> Cow<'_, Type>
     {
         self.value.getType()

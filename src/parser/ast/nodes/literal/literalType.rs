@@ -35,7 +35,11 @@ impl LiteralType
             LiteralType::Float(float) => context.f32_type().const_float(*float as f64).into(),
             LiteralType::Bool(boolean) => context.bool_type().const_int(*boolean as u64, false).into(),
             LiteralType::Char(character) => context.i8_type().const_int(*character as u64, false).into(),
-            LiteralType::Array(_) => panic!("Cannot get basic value from array literal")
+            LiteralType::Array(values) => 
+            {
+                let arrType = values[0].getType().varType(context);
+                arrType.const_zero()
+            }
         }
     }
 }
