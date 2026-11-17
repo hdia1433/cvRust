@@ -2,6 +2,7 @@
 
 use std::{env, fs, path::Path, process::Command};
 use inkwell::{context::Context, targets::{Target, InitializationConfig, TargetMachine, RelocMode, CodeModel, FileType}, OptimizationLevel, passes::PassBuilderOptions};
+use anyhow::Result as AResult;
 
 pub mod lexer;
 pub mod parser;
@@ -12,11 +13,10 @@ pub mod errors;
 use lexer::Lexer;
 use parser::Parser;
 use semanticAnalyser::SemanticAnalyser;
-use errors::CvResult;
 
 pub use irGenerator::IRGenerator;
 
-fn main() -> CvResult<()>
+fn main() -> AResult<()>
 {
     let debug = if cfg!(debug_assertions)
     {
@@ -57,7 +57,7 @@ fn main() -> CvResult<()>
     let context = Context::create();
     let mut irGenerator = IRGenerator::new(&context);
 
-    irGenerator.translate(parser.getAst());
+    irGenerator.translate(parser.getAst())?;
 
     if debug
     {

@@ -1,6 +1,7 @@
-use crate::parser::ast::{ToFile, Type, nodes::Node};
+use crate::{parser::ast::{ToFile, Type, nodes::Node}};
 use bitvec::vec::BitVec;
-use inkwell::{values::BasicValueEnum, context::Context};
+use anyhow::{Ok, Result as AResult};
+use inkwell::{builder::Builder, context::Context, types::BasicType, values::{ArrayValue, BasicValueEnum}};
 use std::{fmt::Display, io::Write, ops::Deref, borrow::Cow};
 
 #[derive(Debug, Clone)]
@@ -27,18 +28,27 @@ impl LiteralType
         }
     }
 
-    pub fn intoBasicValue<'a>(&self, context: &'a Context) -> BasicValueEnum<'a>
+    pub fn intoBasicValue<'a>(&self, context: &'a Context, builder: &Builder<'a>) -> AResult<BasicValueEnum<'a>>
     {
         match self
         {
-            LiteralType::Integer(integer) => context.i32_type().const_int(*integer as u64, true).into(),
-            LiteralType::Float(float) => context.f32_type().const_float(*float as f64).into(),
-            LiteralType::Bool(boolean) => context.bool_type().const_int(*boolean as u64, false).into(),
-            LiteralType::Char(character) => context.i8_type().const_int(*character as u64, false).into(),
+            LiteralType::Integer(integer) => Ok(context.i32_type().const_int(*integer as u64, true).into()),
+            LiteralType::Float(float) => Ok(context.f32_type().const_float(*float as f64).into()),
+            LiteralType::Bool(boolean) => Ok(context.bool_type().const_int(*boolean as u64, false).into()),
+            LiteralType::Char(character) => Ok(context.i8_type().const_int(*character as u64, false).into()),
             LiteralType::Array(values) => 
             {
-                let arrType = values[0].getType().varType(context);
-                arrType.const_zero()
+                let mut arr: ArrayValue = values.first().expect("Failed to get first element").getType().varType(context).array_type(values.len() as u32).get_undef();
+                
+                for i in 0..values.len()
+                {
+                    if let Node::Literal(literal) = &values[i]
+                    {
+                        arr = builder.build_insert_value(arr, literal.getValue().intoBasicValue(context, builder)?, i as u32, "Insert")?.into_array_value();
+                    }
+                }
+
+                Ok(arr.into())
             }
         }
     }
@@ -83,7 +93,7 @@ impl ToFile for LiteralType
                     arr[i].toFile(f, &mut innerIndents, i == arr.len() - 1)?;
                 };
 
-                Ok(())
+                std::io::Result::Ok(())
             }
         }
     }
