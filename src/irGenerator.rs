@@ -1,5 +1,5 @@
-use crate::{parser::ast::{Type, nodes::{Conversion, Function, GlobalScope, Node, VariableAccess, VariableDeclaration, binaryOperation::{BinaryOperation, Op as BinOp}, unaryOperation::{Op as UnOp, UnaryOperation}}}};
-use inkwell::{FloatPredicate, IntPredicate, builder::Builder, context::Context, module::Module,  values::{BasicValueEnum, FunctionValue, PointerValue}};
+use crate::{errors::CompilerError::{ErrorNodeFound, ExpectedBasicValue, ExpectedNode, ExpectedPointerValue}, parser::ast::{Type, nodes::{Conversion, Function, GlobalScope, Node, VariableAccess, VariableDeclaration, binaryOperation::{BinaryOperation, Op as BinOp}, unaryOperation::{Op as UnOp, UnaryOperation}}}};
+use inkwell::{FloatPredicate, IntPredicate, builder::Builder, context::Context, module::Module, values::{BasicValue, BasicValueEnum, FunctionValue, IntValue, PointerValue}};
 use std::collections::HashMap;
 use anyhow::{Ok, Result as AResult};
 
@@ -72,33 +72,78 @@ impl<'a> IRGenerator<'a>
         Ok(())
     }
 
-    pub fn translateVarDecl(&mut self, varDecl: &VariableDeclaration) -> Option<BasicValueEnum<'a>>
+    pub fn translateVarDecl(&mut self, varDecl: &VariableDeclaration) -> AResult<PointerValue<'a>>
     {
         let varType = varDecl.getVarType().varType(&self.context);
 
         let var = self.builder.build_alloca(varType, varDecl.getName()).expect("Failed to allocate a variable");
 
         self.vars.insert(varDecl.getName().to_string(), var);
+        self.builder.build_store(var, varType.const_zero())?;
 
-        None
+        Ok(var)
     }
 
-    pub fn translateVarAccess(&self, varAccess: &VariableAccess) -> BasicValueEnum<'a>
+    pub fn translateVarAccess(&self, varAccess: &VariableAccess) -> AResult<PointerValue<'a>>
     {
-        self.builder.build_load(varAccess.getVarType().varType(&self.context), *self.vars.get(varAccess.getName()).expect("Failed to retrieve variable"), format!("{}_value", varAccess.getName()).as_str()).expect("Failed to get value from variable")
+        Ok(*self.vars.get(varAccess.getName()).ok_or(ExpectedPointerValue)?)
     }
 
     fn translateNode(&mut self, node: &Node) -> AResult<Option<BasicValueEnum<'a>>>
     {
         match node 
         {
-            Node::VariableDeclaration(varDecl) => Ok(self.translateVarDecl(varDecl)),
-            Node::VariableAccess(varAccess) => Ok(Some(self.translateVarAccess(varAccess))),
+            Node::VariableDeclaration(varDecl) => Ok(Some(self.translateVarDecl(varDecl)?.as_basic_value_enum())),
+            Node::VariableAccess(varAccess) => Ok(Some(self.translateVarAccess(varAccess)?.as_basic_value_enum())),
             Node::BinaryOperation(binaryOp) => self.translateBinaryOp(binaryOp),
-            Node::Conversion(conversion) => self.translateConversion(conversion),
+            Node::Conversion(conversion) => Ok(Some(self.translateConversion(conversion)?)),
             Node::Literal(literal) => Ok(Some(literal.getValue().intoBasicValue(&self.context, &self.builder)?)),
-            Node::UnaryOperation(unaryOp) => self.translateUnaryOp(unaryOp),
+            Node::UnaryOperation(unaryOp) => Ok(Some(self.translateUnaryOp(unaryOp)?)),
             Node::Error => panic!("Error node found")
+        }
+    }
+
+    fn translateNodeToValue(&mut self, node: &Node) -> AResult<BasicValueEnum<'a>>
+    {
+        match node
+        {
+            Node::VariableDeclaration(varDecl) =>
+            {
+                let ptr:PointerValue = self.translateVarDecl(varDecl)?;
+
+                Ok(self.builder.build_load(varDecl.getVarType().varType(&self.context), ptr, &format!("{}_access", varDecl.getName()))?)
+            },
+            Node::VariableAccess(varAccess) =>
+            {
+                let ptr:PointerValue = self.translateVarAccess(varAccess)?;
+
+                Ok(self.builder.build_load(varAccess.getVarType().varType(self.context), ptr, &format!("{}_access", varAccess.getName()))?)
+            },
+            Node::BinaryOperation(binaryOp) =>
+            {
+                let mut value:BasicValueEnum = self.translateBinaryOp(binaryOp)?.ok_or(ExpectedBasicValue)?;
+
+                if let BasicValueEnum::PointerValue(ptr) = value
+                {
+                    value = self.builder.build_load(binaryOp.getType().varType(self.context), ptr, "result")?;
+                }
+
+                Ok(value)
+            },
+            Node::Conversion(conversion) => self.translateConversion(conversion),
+            Node::Literal(literal) => Ok(literal.getValue().intoBasicValue(self.context, &self.builder)?),
+            Node::UnaryOperation(unaryOp) =>
+            {
+                let mut value:BasicValueEnum = self.translateUnaryOp(unaryOp)?;
+
+                if let BasicValueEnum::PointerValue(ptr) = value
+                {
+                    value = self.builder.build_load(unaryOp.getType().varType(self.context), ptr, "result")?;
+                }
+
+                Ok(value)
+            },
+            Node::Error => Err(ErrorNodeFound.into())
         }
     }
 
@@ -110,7 +155,7 @@ impl<'a> IRGenerator<'a>
             {
                 Node::VariableDeclaration(varDecl) =>
                 {
-                    self.translateVarDecl(varDecl);
+                    self.translateVarDecl(varDecl)?;
 
                     *self.vars.get(varDecl.getName()).expect("Couldn't find variable")
                 },
@@ -120,9 +165,9 @@ impl<'a> IRGenerator<'a>
                 },
                 Node::UnaryOperation(unaryOp) =>
                 {
-                    let BasicValueEnum::PointerValue(ptr) = self.translateNode(unaryOp.getNode())?.expect("Failed to translate unary operation") else
+                    let BasicValueEnum::PointerValue(ptr) = self.translateUnaryOp(unaryOp)? else
                     {
-                        panic!("Can only assign to a dereference if assigning to a unary operator")
+                        return Err(ExpectedPointerValue.into())
                     };
 
                     ptr
@@ -130,10 +175,7 @@ impl<'a> IRGenerator<'a>
                 _ => panic!("Only a variable declaration can be assigned to.")
             };
 
-            let Some(value) = self.translateNode(binaryOp.getRhs())? else
-            {
-                panic!("A variable must be assigned to a basic value")
-            };
+            let value = self.translateNodeToValue(binaryOp.getRhs())?;
 
             self.builder.build_store(var, value).expect("Failed to write to a variable");
 
@@ -141,8 +183,8 @@ impl<'a> IRGenerator<'a>
         }
         else 
         {
-            let lhs: BasicValueEnum = self.translateNode(binaryOp.getLhs())?.expect("LHS Wasn't a basic value");
-            let rhs:BasicValueEnum = self.translateNode(binaryOp.getRhs())?.expect("RHS wasn't a basic value");
+            let lhs: BasicValueEnum = self.translateNodeToValue(binaryOp.getLhs())?;
+            let rhs:BasicValueEnum = self.translateNodeToValue(binaryOp.getRhs())?;
 
             Ok(Some(match lhs
             {
@@ -185,7 +227,7 @@ impl<'a> IRGenerator<'a>
         }
     }
 
-    fn translateUnaryOp(&mut self, unaryOp: &UnaryOperation) -> AResult<Option<BasicValueEnum<'a>>>
+    fn translateUnaryOp(&mut self, unaryOp: &UnaryOperation) -> AResult<BasicValueEnum<'a>>
     {
         match unaryOp.getOp()
         {
@@ -196,7 +238,7 @@ impl<'a> IRGenerator<'a>
                     panic!("Cannot get the address of a node that isn't a variable access")
                 };
 
-                Ok(Some(BasicValueEnum::PointerValue(*self.vars.get(varAccess.getName()).expect("Failed to get variable"))))
+                Ok(BasicValueEnum::PointerValue(*self.vars.get(varAccess.getName()).expect("Failed to get variable")))
             },
             UnOp::Dereference => 
             {
@@ -212,33 +254,48 @@ impl<'a> IRGenerator<'a>
                     panic!("Can only deference a value of pointer type");
                 };
 
-                Ok(Some(self.builder.build_load(subType.varType(&self.context), ptr, "deref").expect("Failed to build load instruction")))
+                Ok(self.builder.build_load(subType.varType(&self.context), ptr, "deref").expect("Failed to build load instruction"))
             },
-            UnOp::Subscript(_) => todo!()
+            UnOp::Subscript(i) => 
+            {
+                let Node::VariableAccess(varAccess) = unaryOp.getNode() else
+                {
+                    return Err(ExpectedNode("Variable Access".into()).into());
+                };
+                let ptr: PointerValue = *self.vars.get(varAccess.getName()).ok_or(ExpectedPointerValue)?;
+                let zero: IntValue = self.context.i32_type().const_int(0, false);
+                let index: IntValue = self.translateNodeToValue(i)?.into_int_value();
+                let elementPtr: PointerValue = unsafe
+                {
+                    self.builder.build_gep(varAccess.getType().varType(&self.context), ptr, &[zero, index], "ElementPtr")?
+                };
+
+                Ok(elementPtr.as_basic_value_enum())
+            }
         }
     }
 
-    fn translateConversion(&mut self, conversion: &Conversion) -> AResult<Option<BasicValueEnum<'a>>>
+    fn translateConversion(&mut self, conversion: &Conversion) -> AResult<BasicValueEnum<'a>>
     {
         match (&*conversion.getInitialType(), conversion.getType())
         {
             (Type::Int, Type::Float) =>
             {
-                let BasicValueEnum::IntValue(integer) = self.translateNode(conversion.getNode())?.expect("node wasn't a basic value") else
+                let BasicValueEnum::IntValue(integer) = self.translateNodeToValue(conversion.getNode())? else
                 {
                     panic!("Node wasn't an integer value")
                 };
 
-                Ok(Some(BasicValueEnum::FloatValue(self.builder.build_signed_int_to_float(integer, self.context.f32_type(), "conversion").expect("Failed to build casting instruction"))))
+                Ok(BasicValueEnum::FloatValue(self.builder.build_signed_int_to_float(integer, self.context.f32_type(), "conversion").expect("Failed to build casting instruction")))
             },
             (Type::Float, Type::Int) =>
             {
-                let BasicValueEnum::FloatValue(float) = self.translateNode(conversion.getNode())?.expect("Node wasn't a basic value") else
+                let BasicValueEnum::FloatValue(float) = self.translateNodeToValue(conversion.getNode())? else
                 {
                     panic!("Node wasn't a float value");
                 };
 
-                Ok(Some(BasicValueEnum::IntValue(self.builder.build_float_to_signed_int(float, self.context.i32_type(), "conversion").expect("Failed to build casting"))))
+                Ok(BasicValueEnum::IntValue(self.builder.build_float_to_signed_int(float, self.context.i32_type(), "conversion").expect("Failed to build casting")))
             },
             _ => panic!("Invalid conversion")
         }

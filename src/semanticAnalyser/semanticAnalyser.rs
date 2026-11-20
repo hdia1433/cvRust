@@ -1,6 +1,7 @@
-use std::{ops::Deref};
+use std::{mem, ops::Deref};
 
-use crate::{errors::{CvError::{self, RuntimeError}, CvResult, RuntimeError::InvalidConversion}, parser::ast::{Type, nodes::{Conversion, Function, GlobalScope, Literal, Node, VariableAccess, VariableDeclaration, binaryOperation::{BinaryOperation, Op as BinOp}, literal::LiteralType, unaryOperation::{Op as UnOp, UnaryOperation}}}};
+use crate::{errors::RuntimeError::{InvalidConversion, SubscriptOnNonArray}, parser::ast::{Type, nodes::{Conversion, Function, GlobalScope, Literal, Node, VariableAccess, VariableDeclaration, binaryOperation::{BinaryOperation, Op as BinOp}, literal::LiteralType, unaryOperation::{Op as UnOp, UnaryOperation}}}};
+use anyhow::Result as AResult;
 
 pub use super::SemanticScope;
 
@@ -16,7 +17,7 @@ impl SemanticAnalyser
         Self {varScopes: Vec::new()}
     }
 
-    pub fn analyse(&mut self, ast: &mut GlobalScope) -> CvResult<()>
+    pub fn analyse(&mut self, ast: &mut GlobalScope) -> AResult<()>
     {
         let functions = ast.getFunctionsMut();
 
@@ -28,7 +29,7 @@ impl SemanticAnalyser
         Ok(())
     }
 
-    fn analyseFunction(&mut self, func: &mut Function) -> CvResult<()>
+    fn analyseFunction(&mut self, func: &mut Function) -> AResult<()>
     {
         self.varScopes.push(SemanticScope::new());
 
@@ -62,7 +63,7 @@ impl SemanticAnalyser
         varAccess.setVarType(varType);
     }
 
-    fn analyseBinaryOp(&mut self, binaryOp: &mut BinaryOperation) -> Result<(), CvError>
+    fn analyseBinaryOp(&mut self, binaryOp: &mut BinaryOperation) -> AResult<()>
     {
         self.analyseNode(binaryOp.getLhsMut())?;
         self.analyseNode(binaryOp.getRhsMut())?;
@@ -119,13 +120,32 @@ impl SemanticAnalyser
         Ok(())
     }
 
-    fn analyseUnaryOp(&mut self, unaryOp: &mut UnaryOperation) -> CvResult<()>
+    fn analyseUnaryOp(&mut self, unaryOp: &mut UnaryOperation) -> AResult<()>
     {
         self.analyseNode(unaryOp.getNodeMut())?;
 
         match (unaryOp.getOp(), unaryOp.getNode().getType())
         {
             (UnOp::Dereference, nodeType) if !matches!(&*nodeType, Type::Pointer(_)) => panic!("Cannot dereference a node that isn't a pointer"),
+            (UnOp::Subscript(_), nodeType) =>
+            {
+                if !matches!(&*nodeType, Type::Array(_, _))
+                {
+                    return Err(SubscriptOnNonArray.into());
+                };
+
+                if let UnOp::Subscript(i) = unaryOp.getOpMut()
+                {
+                    self.analyseNode(i.as_mut())?;
+                    if !matches!(i.getType().as_ref(), Type::Int)
+                    {
+                        let take: Box<Node> = mem::take(i);
+                        *i = Box::new(Node::Conversion(Conversion::newFromBox(take, Type::Int)));
+                        self.analyseNode(i.as_mut())?;
+                    }
+                }
+
+            },
             _ => ()
         }
 
@@ -138,7 +158,7 @@ impl SemanticAnalyser
         Ok(())
     }
 
-    fn analyseLiteral(&mut self, literal: &mut Literal) -> CvResult<()>
+    fn analyseLiteral(&mut self, literal: &mut Literal) -> AResult<()>
     {
         if let LiteralType::Array(arr) = literal.getValueMut()
         {
@@ -163,7 +183,7 @@ impl SemanticAnalyser
         Ok(())
     }
 
-    fn analyseConversion(&mut self, conversion: &mut Conversion) -> CvResult<()>
+    fn analyseConversion(&mut self, conversion: &mut Conversion) -> AResult<()>
     {
         self.analyseNode(conversion.getNodeMut())?;
 
@@ -184,13 +204,13 @@ impl SemanticAnalyser
             (Type::Float, type2) if *type2 == Type::Int || *type2 == Type::Bool => (),
             (Type::Bool, type2) if *type2 == Type::Float || *type2 == Type::Int => (),
             (Type::Pointer(_), Type::Pointer(_)) => (),
-            _ => return Err(RuntimeError(InvalidConversion((*conversion.getInitialType()).clone(), (*conversion.getType()).clone())))
+            _ => return Err(InvalidConversion((*conversion.getInitialType()).clone(), (*conversion.getType()).clone()).into())
         }
 
         Ok(())
     }
 
-    fn analyseNode(&mut self, node: &mut Node) -> Result<(), CvError>
+    fn analyseNode(&mut self, node: &mut Node) -> AResult<()>
     {
         match node
         {

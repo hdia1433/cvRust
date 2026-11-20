@@ -9,4 +9,8 @@ pub enum CompilerError
     ErrorNodeFound,
     #[error("A basic value was expected, but one wasn't provided")]
     ExpectedBasicValue,
+    #[error("A pointer value was expected, but one wasn't provided")]
+    ExpectedPointerValue,
+    #[error("Expected {0} node")]
+    ExpectedNode(String)
 }

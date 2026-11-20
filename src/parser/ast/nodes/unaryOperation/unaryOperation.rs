@@ -81,6 +81,11 @@ impl UnaryOperation
         &self.op
     }
 
+    pub fn getOpMut(&mut self) -> &mut Op
+    {
+        &mut self.op
+    }
+
     pub fn getNode(&self) -> &Node
     {
         &self.node
